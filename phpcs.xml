@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<ruleset name="JOOservices Laravel Logging">
+    <description>PHP_CodeSniffer rules for jooservices/laravel-logging.</description>
+    <file>src</file>
+    <file>tests</file>
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <rule ref="PSR12"/>
+    <rule ref="PSR2.Classes.ClassDeclaration.OpenBraceNewLine">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Squiz.Functions.MultiLineFunctionDeclaration.BraceOnSameLine">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Squiz.WhiteSpace.ScopeClosingBrace.ContentBefore">
+        <severity>0</severity>
+    </rule>
+    <rule ref="PSR12.Classes.ClassInstantiation.MissingParentheses">
+        <severity>0</severity>
+    </rule>
+    <rule ref="PSR12.Operators.OperatorSpacing">
+        <severity>0</severity>
+    </rule>
+    <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Generic.Files.LineLength">
+        <severity>0</severity>
+    </rule>
+</ruleset>

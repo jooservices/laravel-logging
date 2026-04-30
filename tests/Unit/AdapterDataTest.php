@@ -1,0 +1,167 @@
+<?php
+
+declare(strict_types=1);
+
+namespace JOOservices\LaravelLogging\Tests\Unit;
+
+use Illuminate\Http\Request;
+use JOOservices\LaravelLogging\Adapters\ActivityLogAdapter;
+use JOOservices\LaravelLogging\Adapters\AuditLogAdapter;
+use JOOservices\LaravelLogging\Adapters\DomainLogAdapter;
+use JOOservices\LaravelLogging\Adapters\SecurityLogAdapter;
+use JOOservices\LaravelLogging\Adapters\SystemLogAdapter;
+use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
+use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
+use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
+use JOOservices\LaravelLogging\Tests\Stubs\TestModel;
+use JOOservices\LaravelLogging\Tests\TestCase;
+use RuntimeException;
+
+final class AdapterDataTest extends TestCase
+{
+    private LogStoreInterface $store;
+
+    private LogSanitizerInterface $sanitizer;
+
+    private LogContextResolverInterface $contextResolver;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->store = $this->useFakeStore();
+        $this->sanitizer = $this->app->make(LogSanitizerInterface::class);
+        $this->contextResolver = $this->app->make(LogContextResolverInterface::class);
+    }
+
+    public function test_activity_defaults_and_common_fluent_data(): void
+    {
+        $actor = new TestModel(['id' => 123]);
+        $subject = new TestModel(['id' => 456]);
+
+        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('provider.disabled')
+            ->by($actor)
+            ->on($subject)
+            ->causedByExternal('api-client', 789)
+            ->properties(['items' => 10, 'password' => 'secret'])
+            ->context(['nested' => ['token' => 'abc']])
+            ->toData();
+
+        $this->assertSame('activity', $data->type);
+        $this->assertSame('activity', $data->adapter);
+        $this->assertSame('info', $data->level);
+        $this->assertSame(TestModel::class, $data->actorType);
+        $this->assertSame('123', $data->actorId);
+        $this->assertSame(TestModel::class, $data->subjectType);
+        $this->assertSame('456', $data->subjectId);
+        $this->assertSame('api-client', $data->causerType);
+        $this->assertSame('789', $data->causerId);
+        $this->assertSame('[REDACTED]', $data->properties['password']);
+        $this->assertSame('[REDACTED]', $data->context['nested']['token']);
+        $this->assertNotNull($data->occurredAt);
+    }
+
+    public function test_string_targets_are_not_parsed(): void
+    {
+        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('checked')
+            ->by('system')
+            ->on('external:provider:123')
+            ->causedBy('scheduler')
+            ->toData();
+
+        $this->assertSame('system', $data->actorType);
+        $this->assertNull($data->actorId);
+        $this->assertSame('external:provider:123', $data->subjectType);
+        $this->assertNull($data->subjectId);
+        $this->assertSame('scheduler', $data->causerType);
+        $this->assertNull($data->causerId);
+    }
+
+    public function test_external_methods_cast_ids_to_strings(): void
+    {
+        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('external')
+            ->byExternal('api-client', 'crawlerx')
+            ->onExternal('provider', 123)
+            ->causedByExternal('automation')
+            ->toData();
+
+        $this->assertSame('crawlerx', $data->actorId);
+        $this->assertSame('123', $data->subjectId);
+        $this->assertNull($data->causerId);
+    }
+
+    public function test_audit_changes_from_filters_fields(): void
+    {
+        $data = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('config.updated')
+            ->only(['enabled', 'count'])
+            ->except(['count'])
+            ->changesFrom(['enabled' => false, 'count' => 1, 'name' => 'a'], ['enabled' => true, 'count' => 2, 'name' => 'b'])
+            ->toData();
+
+        $this->assertSame(['enabled' => ['old' => false, 'new' => true]], $data->changes);
+    }
+
+    public function test_security_login_failed_sets_action_level_and_properties(): void
+    {
+        $data = (new SecurityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->loginFailed('user@example.test')
+            ->toData();
+
+        $this->assertSame('security', $data->type);
+        $this->assertSame('warning', $data->level);
+        $this->assertSame('login.failed', $data->action);
+        $this->assertSame('user@example.test', $data->properties['identifier']);
+    }
+
+    public function test_domain_from_event_sets_minimal_projection(): void
+    {
+        $event = new class {};
+
+        $data = (new DomainLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->fromEvent($event)
+            ->toData();
+
+        $this->assertSame('domain', $data->type);
+        $this->assertStringStartsWith('domain.', $data->action);
+        $this->assertSame($event::class, $data->properties['event']);
+    }
+
+    public function test_system_shortcuts_capture_exception_context(): void
+    {
+        $data = (new SystemLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->jobFailed('ProcessJob', new RuntimeException('Nope'))
+            ->toData();
+
+        $this->assertSame('system', $data->type);
+        $this->assertSame('error', $data->level);
+        $this->assertSame('job.failed', $data->action);
+        $this->assertSame('ProcessJob', $data->context['job']);
+        $this->assertSame(RuntimeException::class, $data->context['exception']['class']);
+    }
+
+    public function test_with_request_fills_safe_request_context(): void
+    {
+        $request = Request::create('/demo?x=1', 'POST', ['password' => 'secret'], [], [], [
+            'HTTP_X_REQUEST_ID' => 'req-1',
+            'HTTP_X_CORRELATION_ID' => 'corr-1',
+            'HTTP_TRACEPARENT' => '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00',
+            'HTTP_USER_AGENT' => 'UnitTest',
+            'REMOTE_ADDR' => '127.0.0.1',
+        ]);
+
+        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('request.checked')
+            ->withRequest($request)
+            ->toData();
+
+        $this->assertSame('req-1', $data->requestId);
+        $this->assertSame('corr-1', $data->correlationId);
+        $this->assertSame('4bf92f3577b34da6a3ce929d0e0e4736', $data->traceId);
+        $this->assertSame('UnitTest', $data->userAgent);
+        $this->assertArrayNotHasKey('password', $data->context['request']);
+    }
+}

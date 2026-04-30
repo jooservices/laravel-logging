@@ -1,0 +1,94 @@
+{
+    "name": "jooservices/laravel-logging",
+    "description": "MongoDB-backed structured application logging for Laravel.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.5",
+        "jooservices/dto": "^1.0",
+        "jooservices/laravel-repository": "^1.1",
+        "laravel/framework": "^12.0",
+        "mongodb/laravel-mongodb": "^5.7"
+    },
+    "require-dev": {
+        "captainhook/captainhook": "^5.23",
+        "captainhook/plugin-composer": "^5.3",
+        "friendsofphp/php-cs-fixer": "^3.65",
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.18",
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^10.0",
+        "phpmd/phpmd": "^2.15",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^11.5",
+        "squizlabs/php_codesniffer": "^3.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "JOOservices\\LaravelLogging\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "JOOservices\\LaravelLogging\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "JOOservices\\LaravelLogging\\LaravelLoggingServiceProvider"
+            ],
+            "aliases": {
+                "ActivityLog": "JOOservices\\LaravelLogging\\Facades\\ActivityLog"
+            }
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit --testsuite=unit,integration",
+        "test:unit": "vendor/bin/phpunit --testsuite=unit",
+        "test:integration": "vendor/bin/phpunit --testsuite=integration",
+        "test:coverage": "XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover coverage.xml",
+        "lint:pint": "vendor/bin/pint --test",
+        "lint:pint:fix": "vendor/bin/pint",
+        "lint:cs": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --sequential",
+        "lint:cs:fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --sequential",
+        "lint:phpcs": "vendor/bin/phpcs --standard=phpcs.xml",
+        "lint:phpstan": "XDEBUG_MODE=off vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=512M",
+        "lint:phpmd": "php -d error_reporting=6143 vendor/bin/phpmd src text phpmd.xml",
+        "lint": [
+            "@lint:pint",
+            "@lint:phpcs",
+            "@lint:phpstan"
+        ],
+        "lint:all": [
+            "@lint",
+            "@lint:phpmd",
+            "@lint:cs"
+        ],
+        "lint:fix": [
+            "@lint:pint:fix",
+            "@lint:cs:fix"
+        ],
+        "check": [
+            "@lint:all",
+            "@test"
+        ],
+        "ci": [
+            "@lint:all",
+            "@test:coverage"
+        ],
+        "post-install-cmd": "captainhook install --force --skip-existing",
+        "post-update-cmd": "captainhook install --force --skip-existing"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "captainhook/plugin-composer": true,
+            "composer/package-versions-deprecated": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,9 @@
+/vendor/
+/.phpunit.cache/
+/.php-cs-fixer.cache
+/coverage.xml
+/coverage/
+/build/
+/.idea/
+/.vscode/
+.DS_Store
