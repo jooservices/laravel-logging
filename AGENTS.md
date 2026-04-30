@@ -8,12 +8,13 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 - Read the relevant `.github/skills/*/SKILL.md` files before non-trivial changes.
 - Use `jooservices/dto` as the standard for tooling, docs, AI guidance, and PHP style; apply only relevant patterns.
 - Use `jooservices/laravel-repository` as the source of truth before changing repository construction or persistence.
-- Stop and report evidence when package APIs, MongoDB Laravel behavior, or JOOservices standards conflict.
+- Do not assume missing behavior. Stop and report evidence when package APIs, MongoDB Laravel behavior, or JOOservices standards conflict.
 
 ## Package rules
 
 - The only v1 storage backend is MongoDB collection `activity_logs`.
 - Persistence must flow through `ActivityLogData` -> `MongoLogStore` -> `ActivityLogRepository` -> `ActivityLogRecord`.
+- `ActivityLogRepository` must receive its model through dependency injection and follow `jooservices/laravel-repository` constructor and trait patterns.
 - Adapters must not call models directly or bypass the store/repository path.
 - Internal payloads should be DTO-first, especially `ActivityLogData`.
 - Adapter resolution is registry-based. Do not add hard-coded built-in adapter methods to the manager interface.
@@ -32,6 +33,7 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 - Pint is the master formatter. Tune PHPCS/php-cs-fixer around Pint, not the reverse.
 - Before commit, run `composer validate`, `composer run lint:fix`, `composer run lint:all`, `composer run test`, and `composer run check`.
 - Also run `composer audit` and `composer run ci` when configured and environment support is available.
+- Install and verify CaptainHook locally with `composer run post-install-cmd`; do not bypass hooks with `--no-verify`.
 - Fix all warnings, notices, and errors. Do not commit when checks fail.
 - If code, config, tooling, workflow, architecture, or user-facing behavior changes, update relevant docs before commit.
 - If contributor workflow, package rules, commands, or architecture guidance changes, update `AGENTS.md` and `.github/skills` before commit.

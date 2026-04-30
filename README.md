@@ -95,6 +95,8 @@ Built-in adapters are registered from config:
 - `system`
 
 Custom adapters implement `LogAdapterInterface`, usually by extending `BaseLogAdapter`.
+The contract includes `save(): ActivityLogRecord` for synchronous persistence and
+`dispatch(): void` for dispatch-style sync or async logging.
 
 ```php
 ActivityLog::register('crawler', CrawlerLogAdapter::class);

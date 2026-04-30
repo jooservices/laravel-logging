@@ -11,6 +11,7 @@ use JOOservices\LaravelLogging\Adapters\AuditLogAdapter;
 use JOOservices\LaravelLogging\Adapters\DomainLogAdapter;
 use JOOservices\LaravelLogging\Adapters\SecurityLogAdapter;
 use JOOservices\LaravelLogging\Adapters\SystemLogAdapter;
+use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
@@ -228,11 +229,14 @@ final class AdapterDataTest extends TestCase
     {
         Queue::fake();
 
-        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $adapter = new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver);
+
+        $adapter
             ->action('sync.dispatch')
             ->sync()
             ->dispatch();
 
+        $this->assertInstanceOf(LogAdapterInterface::class, $adapter);
         Queue::assertNothingPushed();
         $this->assertCount(1, $this->store->records);
         $this->assertSame('sync.dispatch', $this->store->records[0]->action);

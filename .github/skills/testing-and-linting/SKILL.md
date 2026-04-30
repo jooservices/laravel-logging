@@ -13,6 +13,7 @@ description: "Use when adding tests, fixing quality failures, or changing compos
 - `PHPStan` checks static correctness.
 - `PHPMD` checks maintainability.
 - `PHPUnit` covers unit and MongoDB integration behavior.
+- `CaptainHook` runs local Git hooks and must not be bypassed.
 
 ## Commands
 
@@ -39,3 +40,4 @@ composer run ci
 - Static analysis fails: fix types or real code flow; avoid broad suppressions.
 - MongoDB tests fail from missing service: report the environment evidence unless CI/service config is the intended change.
 - CaptainHook changes must reference only installed tools and existing composer scripts.
+- If hooks are changed, run the hook actions manually before committing.

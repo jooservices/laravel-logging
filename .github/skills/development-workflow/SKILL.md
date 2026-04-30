@@ -12,6 +12,7 @@ description: "Use when starting implementation, preparing commits, updating work
 3. Inspect implementation, config, docs, and tests before changing behavior.
 4. Check `jooservices/dto` for tooling/docs/AI standards when those areas change.
 5. Check `jooservices/laravel-repository` before changing repository construction or persistence.
+6. Stop on unclear package behavior, local API conflicts, or standards conflicts; do not guess.
 
 ## During coding
 
@@ -36,10 +37,13 @@ composer run ci
 ```
 
 If a configured command cannot run in the local environment, stop and report the exact reason.
+Also run `composer run post-install-cmd` and manually execute the configured CaptainHook
+hook commands before committing.
 
 ## Commit rules
 
 - Commit only after required checks pass.
+- Do not bypass hooks with `--no-verify`.
 - Use author `Viet Vu <jooservices@gmail.com>`.
 - Use a short meaningful Conventional Commit message.
 - Leave the working tree clean after successful work.

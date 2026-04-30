@@ -20,7 +20,7 @@ description: "Use when changing MongoDB model, repository, store, indexes, persi
 
 - MongoDB collection is `activity_logs` by default.
 - Persist only through `MongoLogStore` -> `ActivityLogRepository` -> `ActivityLogRecord`.
-- `ActivityLogRepository` must follow `jooservices/laravel-repository` constructor and trait patterns.
+- `ActivityLogRepository` must receive `ActivityLogRecord` through dependency injection and follow `jooservices/laravel-repository` constructor and trait patterns.
 - Configured model classes must extend `ActivityLogRecord`.
 - Do not let adapters or jobs call the model directly.
 - Index setup belongs in `activity-log:indexes` and matching docs.

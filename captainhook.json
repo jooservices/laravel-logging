@@ -22,7 +22,13 @@
                 }
             },
             {
-                "action": "composer lint:pint"
+                "action": "echo 'Running Pint style check...' && composer lint:pint"
+            },
+            {
+                "action": "echo 'Running PHPCS structural checks...' && composer lint:phpcs"
+            },
+            {
+                "action": "echo 'Running PHPStan static analysis...' && composer lint:phpstan"
             }
         ]
     },
@@ -30,7 +36,7 @@
         "enabled": true,
         "actions": [
             {
-                "action": "composer check"
+                "action": "echo 'Running package check gate...' && composer check"
             }
         ]
     },
