@@ -15,6 +15,7 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 - The only v1 storage backend is MongoDB collection `activity_logs`.
 - Persistence must flow through `ActivityLogData` -> `MongoLogStore` -> `ActivityLogRepository` -> `ActivityLogRecord`.
 - `ActivityLogRepository` must receive its model through dependency injection and follow `jooservices/laravel-repository` constructor and trait patterns.
+- `ActivityLogRepository` is internal. Do not add a public repository override, repository interface, or repository extension point without an explicit approved need.
 - Adapters must not call models directly or bypass the store/repository path.
 - Internal payloads should be DTO-first, especially `ActivityLogData`.
 - Adapter resolution is registry-based. Do not add hard-coded built-in adapter methods to the manager interface.
@@ -31,6 +32,11 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 - Retention is command-based in v1 and prunes by `occurred_at`.
 - Model audit logging is opt-in only through `LogsActivity`; never add global automatic observers.
 - Domain event mapping must use the mapper registry and preserve the fallback event-class projection.
+- Do not implement `ActivityLog::fake()`.
+- Do not add fake/assertion helpers such as `assertRecorded()` or `assertNothingRecorded()` unless the testing policy is explicitly changed.
+- Tests in this repository must use full-flow package behavior. Do not mock or fake internal store, repository, model, adapter, or DTO services.
+- Allowed fakes are limited to Laravel framework boundaries such as `Queue::fake()`, `Event::fake()`, and temporary filesystem fakes.
+- Persistence assertions must hit the real MongoDB test collection, including a real queued job handle when queue dispatch behavior is covered.
 
 ## Quality and docs gate
 
@@ -40,6 +46,7 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 - Also run `composer audit` and `composer run ci` when configured and environment support is available.
 - Install and verify CaptainHook locally with `composer run post-install-cmd`; do not bypass hooks with `--no-verify`.
 - Fix all warnings, notices, and errors. Do not commit when checks fail.
+- Run `git diff --check` as part of the local gate.
 - If code, config, tooling, workflow, architecture, or user-facing behavior changes, update relevant docs before commit.
 - If contributor workflow, package rules, commands, or architecture guidance changes, update `AGENTS.md` and `.github/skills` before commit.
 - After successful work, commit local changes with author `Viet Vu <jooservices@gmail.com>` and leave the working tree clean.

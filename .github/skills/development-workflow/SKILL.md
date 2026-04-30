@@ -18,6 +18,7 @@ description: "Use when starting implementation, preparing commits, updating work
 
 - Keep changes minimal and package-specific.
 - Do not assume missing behavior or silently invent APIs.
+- Do not add `ActivityLog::fake()` or fake/assertion helpers unless the testing policy is explicitly changed.
 - Update tests with behavior changes.
 - Update docs when code, config, tooling, commands, workflows, or user-facing behavior changes.
 - Update `AGENTS.md` and `.github/skills` when contributor workflow or package rules change.

@@ -12,5 +12,12 @@ Any code, config, tooling, docs, workflow, architecture, or user-facing behavior
 change must update matching docs, `AGENTS.md`, and `.github/skills` before
 commit.
 
+Do not add `ActivityLog::fake()`, fake assertion helpers, fake repositories, or
+other internal fake test layers unless the testing policy is explicitly changed.
+Repository construction must stay aligned with
+`jooservices/laravel-repository`, and `ActivityLogRepository` remains an
+internal implementation detail until a separate product decision approves a
+public abstraction.
+
 Never bypass CaptainHook with `--no-verify`. Commit only after the full local
 gate passes, and leave the working tree clean.

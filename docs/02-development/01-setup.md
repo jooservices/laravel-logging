@@ -26,6 +26,12 @@ Create supported MongoDB indexes:
 php artisan activity-log:indexes
 ```
 
+Validate the package runtime after configuration:
+
+```bash
+php artisan activity-log:doctor
+```
+
 CaptainHook installs through Composer:
 
 ```bash

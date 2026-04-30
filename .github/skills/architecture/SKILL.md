@@ -21,6 +21,7 @@ description: "Use when changing package architecture, public logging flow, adapt
 
 - Preserve the flow: facade -> manager -> registry -> adapter -> `ActivityLogData` -> store -> repository -> model -> MongoDB.
 - Keep MongoDB as the only v1 storage backend.
+- Keep `ActivityLogRepository` internal until a separate approved decision introduces a public abstraction.
 - Do not add SQL storage, migrations, or alternate stores unless the package design is intentionally changed and documented.
 - Do not hard-code built-in adapter methods into the manager interface.
 - Treat adapters as stateful builders that must be resolved fresh for each log.

@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace JOOservices\LaravelLogging\Tests;
 
 use Illuminate\Support\Facades\DB;
-use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
 use JOOservices\LaravelLogging\LaravelLoggingServiceProvider;
-use JOOservices\LaravelLogging\Tests\Support\FakeLogStore;
 use MongoDB\Laravel\MongoDBServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Throwable;
@@ -34,17 +32,14 @@ abstract class TestCase extends Orchestra
         $app['config']->set('session.driver', 'array');
     }
 
-    protected function useFakeStore(): FakeLogStore
-    {
-        $store = new FakeLogStore;
-        $this->app->instance(LogStoreInterface::class, $store);
-
-        return $store;
-    }
-
     protected function clearActivityLogs(): void
     {
-        DB::connection('mongodb')->getCollection('activity_logs')->deleteMany([]);
+        $this->clearCollection('activity_logs');
+    }
+
+    protected function clearCollection(string $collection): void
+    {
+        DB::connection('mongodb')->getCollection($collection)->deleteMany([]);
     }
 
     protected function requiresMongoDb(): void

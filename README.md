@@ -19,6 +19,14 @@ It is not a replacement for Laravel Log, Monolog, Sentry, OpenTelemetry, Loki, E
 composer require jooservices/laravel-logging
 php artisan vendor:publish --tag=laravel-logging-config
 php artisan activity-log:indexes
+php artisan activity-log:doctor
+```
+
+Use the doctor command to validate config loading, container bindings, adapter
+resolution, queue readability, and MongoDB reachability:
+
+```bash
+php artisan activity-log:doctor --json
 ```
 
 The default MongoDB collection is `activity_logs`.
@@ -115,6 +123,9 @@ Built-in adapters are registered from config:
 Custom adapters implement `LogAdapterInterface`, usually by extending `BaseLogAdapter`.
 The contract includes `save(): ActivityLogRecord` for synchronous persistence and
 `dispatch(): void` for dispatch-style sync or async logging.
+
+`ActivityLogRepository` remains an internal package data-access layer. Public
+repository replacement is not a supported configuration surface in v1.
 
 ```php
 ActivityLog::register('crawler', CrawlerLogAdapter::class);
@@ -234,5 +245,10 @@ composer run format:sanity
 ```
 
 MongoDB integration tests require a running MongoDB server at `MONGODB_URI` or `mongodb://localhost:27017`. Without MongoDB, integration tests are skipped with a clear message.
+
+This package tests the real persistence flow. It does not mock internal store,
+repository, model, adapter, or DTO layers. Allowed fakes stay at Laravel
+framework boundaries such as queue dispatch, events, or temporary filesystem
+output.
 
 AI contributors should follow `AGENTS.md` and the package-specific skills in `.github/skills/`. When code, config, tooling, workflow, architecture, or behavior changes, update the matching docs and AI guidance before committing.

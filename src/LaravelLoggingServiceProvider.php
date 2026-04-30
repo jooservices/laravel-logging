@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JOOservices\LaravelLogging;
 
 use Illuminate\Support\ServiceProvider;
+use JOOservices\LaravelLogging\Console\Commands\ActivityLogDoctorCommand;
 use JOOservices\LaravelLogging\Console\Commands\ExportActivityLogsCommand;
 use JOOservices\LaravelLogging\Console\Commands\InstallActivityLogIndexesCommand;
 use JOOservices\LaravelLogging\Console\Commands\PruneActivityLogsCommand;
@@ -47,19 +48,7 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ActivityLogRepository::class, function (): ActivityLogRepository {
-            $repository = (string) config('laravel-logging.repository', ActivityLogRepository::class);
-
-            if ($repository === ActivityLogRepository::class) {
-                return new ActivityLogRepository($this->app->make(ActivityLogRecord::class));
-            }
-
-            $resolved = $this->app->make($repository);
-
-            if (! $resolved instanceof ActivityLogRepository) {
-                throw new LoggingConfigurationException('Configured activity log repository must extend '.ActivityLogRepository::class.'.');
-            }
-
-            return $resolved;
+            return new ActivityLogRepository($this->app->make(ActivityLogRecord::class));
         });
 
         $this->app->singleton(LogContextResolverInterface::class, DefaultLogContextResolver::class);
@@ -78,6 +67,7 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
+                ActivityLogDoctorCommand::class,
                 ExportActivityLogsCommand::class,
                 InstallActivityLogIndexesCommand::class,
                 PruneActivityLogsCommand::class,

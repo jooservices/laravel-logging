@@ -20,6 +20,8 @@ Before every commit, if code/config/tooling/docs behavior changed, update the re
 ## Rules
 
 - Do not add fake badges or mention unconfigured services.
+- Keep `activity-log:doctor`, `activity-log:indexes`, and the full-flow testing policy synchronized with the code and tests.
+- Do not document unsupported repository customization or fake testing helpers.
 - Keep docs concise and aligned with executable commands.
 - Document limitations instead of smoothing them over.
 - Queue docs must say `save()` is sync and async logging uses `queue(...)->dispatch()`.

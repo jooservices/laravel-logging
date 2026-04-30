@@ -33,6 +33,10 @@ composer run format:sanity
 - Unit-test adapter, registry, DTO-building, sanitization, request context, and queue dispatch behavior.
 - Integration-test MongoDB persistence through the facade/store/repository/model flow.
 - Keep MongoDB integration tests reliable and skip clearly when MongoDB is unavailable.
+- Do not mock or fake internal package services.
+- Do not implement `ActivityLog::fake()` or assertion helpers such as `assertRecorded()`.
+- Allowed fakes are limited to Laravel framework boundaries such as queue dispatch, events, and temporary filesystem output.
+- When queue dispatch is faked, pair it with a real queued job handle persistence assertion.
 - Do not leave composer scripts, hooks, or CI steps pointing at missing tools.
 
 ## Failure playbook

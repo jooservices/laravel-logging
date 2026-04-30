@@ -22,7 +22,6 @@ final class RegistryManagerTest extends TestCase
 {
     public function test_can_register_and_resolve_adapter(): void
     {
-        $this->useFakeStore();
         $registry = new LogAdapterRegistry($this->app);
         $registry->register('custom', ActivityLogAdapter::class);
 
@@ -40,7 +39,6 @@ final class RegistryManagerTest extends TestCase
 
     public function test_replace_overrides_intentionally(): void
     {
-        $this->useFakeStore();
         $registry = new LogAdapterRegistry($this->app);
         $registry->register('custom', ActivityLogAdapter::class);
         $registry->replace('custom', AuditLogAdapter::class);
@@ -67,7 +65,6 @@ final class RegistryManagerTest extends TestCase
 
     public function test_manager_magic_resolves_adapter_and_rejects_parameters(): void
     {
-        $this->useFakeStore();
         /** @var LogAdapterRegistryInterface $registry */
         $registry = $this->app->make(LogAdapterRegistryInterface::class);
         $manager = new ActivityLogManager($registry, $this->app->make(ActivityLogRepository::class));
@@ -80,7 +77,6 @@ final class RegistryManagerTest extends TestCase
 
     public function test_adapter_resolve_returns_fresh_stateful_instances(): void
     {
-        $this->useFakeStore();
         /** @var LogAdapterRegistryInterface $registry */
         $registry = $this->app->make(LogAdapterRegistryInterface::class);
 

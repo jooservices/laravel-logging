@@ -8,7 +8,6 @@ use JOOservices\LaravelLogging\Adapters\DomainLogAdapter;
 use JOOservices\LaravelLogging\Adapters\SecurityLogAdapter;
 use JOOservices\LaravelLogging\Adapters\SystemLogAdapter;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
-use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
 use JOOservices\LaravelLogging\Stores\MongoLogStore;
 
 return [
@@ -16,7 +15,6 @@ return [
     'collection' => env('ACTIVITY_LOG_COLLECTION', 'activity_logs'),
 
     'model' => ActivityLogRecord::class,
-    'repository' => ActivityLogRepository::class,
     'store' => MongoLogStore::class,
 
     'adapters' => [

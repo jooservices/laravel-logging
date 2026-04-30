@@ -16,13 +16,19 @@ receives `ActivityLogData` and records it through `LogStoreInterface`.
 `ActivityLogRecord` through dependency injection, extends `EloquentRepository`,
 and uses the repository CRUD trait for writes.
 
-The configured model class must extend `ActivityLogRecord`. The configured
-repository class must extend `ActivityLogRepository`.
+The configured model class must extend `ActivityLogRecord`. The repository
+binding stays internal to the package and is not a public configuration or
+extension point in v1.
+
+Persistence and command tests must use the real flow through facade or manager,
+adapter, DTO, store, repository, model, and MongoDB collection. Do not add
+fake store, repository, model, adapter, or DTO layers to this repository.
 
 Run the index command after installation:
 
 ```bash
 php artisan activity-log:indexes
+php artisan activity-log:doctor
 ```
 
 The command creates top-level indexes for classification, actor, subject,

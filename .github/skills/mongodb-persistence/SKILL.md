@@ -21,12 +21,14 @@ description: "Use when changing MongoDB model, repository, store, indexes, persi
 - MongoDB collection is `activity_logs` by default.
 - Persist only through `MongoLogStore` -> `ActivityLogRepository` -> `ActivityLogRecord`.
 - `ActivityLogRepository` must receive `ActivityLogRecord` through dependency injection and follow `jooservices/laravel-repository` constructor and trait patterns.
+- `ActivityLogRepository` is internal-only in v1. Do not add public repository overrides or a repository abstraction without an approved requirement.
 - Configured model classes must extend `ActivityLogRecord`.
 - Do not let adapters or jobs call the model directly.
 - Index setup belongs in `activity-log:indexes` and matching docs.
 - Nested `properties`, `context`, and `changes` keys are not indexed in v1.
 - Retention pruning and export commands must query records through repository/model boundaries.
 - Batch and workflow IDs are stored under `context.batch_id` and `context.workflow_id`.
+- Persistence tests must hit the real MongoDB test collection without fake store, repository, model, adapter, or DTO layers.
 
 ## Stop conditions
 

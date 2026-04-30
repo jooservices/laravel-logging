@@ -6,7 +6,6 @@ namespace JOOservices\LaravelLogging\Tests\Unit;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Queue;
-use JOOservices\LaravelLogging\ActivityLogOptions;
 use JOOservices\LaravelLogging\Adapters\ActivityLogAdapter;
 use JOOservices\LaravelLogging\Adapters\AuditLogAdapter;
 use JOOservices\LaravelLogging\Adapters\DomainLogAdapter;
@@ -20,7 +19,7 @@ use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
 use JOOservices\LaravelLogging\DomainLogMapperRegistry;
 use JOOservices\LaravelLogging\Jobs\StoreActivityLogJob;
-use JOOservices\LaravelLogging\Tests\Stubs\AuditedTestModel;
+use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Tests\Stubs\TestModel;
 use JOOservices\LaravelLogging\Tests\TestCase;
 use RuntimeException;
@@ -37,7 +36,11 @@ final class AdapterDataTest extends TestCase
     {
         parent::setUp();
 
-        $this->store = $this->useFakeStore();
+        $this->requiresMongoDb();
+        $this->clearActivityLogs();
+        $this->clearCollection('audited_test_models');
+
+        $this->store = $this->app->make(LogStoreInterface::class);
         $this->sanitizer = $this->app->make(LogSanitizerInterface::class);
         $this->contextResolver = $this->app->make(LogContextResolverInterface::class);
     }
@@ -47,135 +50,135 @@ final class AdapterDataTest extends TestCase
         $actor = new TestModel(['id' => 123]);
         $subject = new TestModel(['id' => 456]);
 
-        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('provider.disabled')
             ->by($actor)
             ->on($subject)
             ->causedByExternal('api-client', 789)
             ->properties(['items' => 10, 'password' => 'secret'])
             ->context(['nested' => ['token' => 'abc']])
-            ->toData();
+            ->save();
 
-        $this->assertSame('activity', $data->type);
-        $this->assertSame('activity', $data->adapter);
-        $this->assertSame('info', $data->level);
-        $this->assertSame(TestModel::class, $data->actorType);
-        $this->assertSame('123', $data->actorId);
-        $this->assertSame(TestModel::class, $data->subjectType);
-        $this->assertSame('456', $data->subjectId);
-        $this->assertSame('api-client', $data->causerType);
-        $this->assertSame('789', $data->causerId);
-        $this->assertSame('[REDACTED]', $data->properties['password']);
-        $this->assertSame('[REDACTED]', $data->context['nested']['token']);
-        $this->assertNotNull($data->occurredAt);
+        $this->assertSame('activity', $record->type);
+        $this->assertSame('activity', $record->adapter);
+        $this->assertSame('info', $record->level);
+        $this->assertSame(TestModel::class, $record->actor_type);
+        $this->assertSame('123', $record->actor_id);
+        $this->assertSame(TestModel::class, $record->subject_type);
+        $this->assertSame('456', $record->subject_id);
+        $this->assertSame('api-client', $record->causer_type);
+        $this->assertSame('789', $record->causer_id);
+        $this->assertSame('[REDACTED]', $record->properties['password']);
+        $this->assertSame('[REDACTED]', $record->context['nested']['token']);
+        $this->assertNotNull($record->occurred_at);
     }
 
     public function test_changes_are_sanitized_recursively(): void
     {
-        $data = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('credentials.updated')
             ->changes([
                 'password' => ['old' => 'before', 'new' => 'after'],
                 'profile' => ['name' => 'Taylor', 'token' => 'abc'],
             ])
-            ->toData();
+            ->save();
 
-        $this->assertSame('[REDACTED]', $data->changes['password']);
-        $this->assertSame('[REDACTED]', $data->changes['profile']['token']);
-        $this->assertSame('Taylor', $data->changes['profile']['name']);
+        $this->assertSame('[REDACTED]', $record->changes['password']);
+        $this->assertSame('[REDACTED]', $record->changes['profile']['token']);
+        $this->assertSame('Taylor', $record->changes['profile']['name']);
     }
 
     public function test_batch_and_workflow_helpers_store_string_context_ids(): void
     {
-        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('crawler.batch.completed')
             ->context(['provider' => 'onejav'])
             ->batchId(123)
             ->workflowId('crawl-456')
-            ->toData();
+            ->save();
 
-        $this->assertSame('onejav', $data->context['provider']);
-        $this->assertSame('123', $data->context['batch_id']);
-        $this->assertSame('crawl-456', $data->context['workflow_id']);
+        $this->assertSame('onejav', $record->context['provider']);
+        $this->assertSame('123', $record->context['batch_id']);
+        $this->assertSame('crawl-456', $record->context['workflow_id']);
     }
 
     public function test_string_targets_are_not_parsed(): void
     {
-        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('checked')
             ->by('system')
             ->on('external:provider:123')
             ->causedBy('scheduler')
-            ->toData();
+            ->save();
 
-        $this->assertSame('system', $data->actorType);
-        $this->assertNull($data->actorId);
-        $this->assertSame('external:provider:123', $data->subjectType);
-        $this->assertNull($data->subjectId);
-        $this->assertSame('scheduler', $data->causerType);
-        $this->assertNull($data->causerId);
+        $this->assertSame('system', $record->actor_type);
+        $this->assertNull($record->actor_id);
+        $this->assertSame('external:provider:123', $record->subject_type);
+        $this->assertNull($record->subject_id);
+        $this->assertSame('scheduler', $record->causer_type);
+        $this->assertNull($record->causer_id);
     }
 
     public function test_external_methods_cast_ids_to_strings(): void
     {
-        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('external')
             ->byExternal('api-client', 'crawlerx')
             ->onExternal('provider', 123)
             ->causedByExternal('automation')
-            ->toData();
+            ->save();
 
-        $this->assertSame('crawlerx', $data->actorId);
-        $this->assertSame('123', $data->subjectId);
-        $this->assertNull($data->causerId);
+        $this->assertSame('crawlerx', $record->actor_id);
+        $this->assertSame('123', $record->subject_id);
+        $this->assertNull($record->causer_id);
     }
 
     public function test_audit_changes_from_filters_fields(): void
     {
-        $data = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('config.updated')
             ->only(['enabled', 'count'])
             ->except(['count'])
             ->changesFrom(['enabled' => false, 'count' => 1, 'name' => 'a'], ['enabled' => true, 'count' => 2, 'name' => 'b'])
-            ->toData();
+            ->save();
 
-        $this->assertSame(['enabled' => ['old' => false, 'new' => true]], $data->changes);
+        $this->assertSame(['enabled' => ['old' => false, 'new' => true]], $record->changes);
     }
 
     public function test_audit_log_only_dirty_can_include_unchanged_fields(): void
     {
-        $data = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('config.checked')
             ->logOnlyDirty(false)
             ->changesFrom(['enabled' => true], ['enabled' => true])
-            ->toData();
+            ->save();
 
-        $this->assertSame(['enabled' => ['old' => true, 'new' => true]], $data->changes);
+        $this->assertSame(['enabled' => ['old' => true, 'new' => true]], $record->changes);
     }
 
     public function test_security_login_failed_sets_action_level_and_properties(): void
     {
-        $data = (new SecurityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new SecurityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->loginFailed('user@example.test')
-            ->toData();
+            ->save();
 
-        $this->assertSame('security', $data->type);
-        $this->assertSame('warning', $data->level);
-        $this->assertSame('login.failed', $data->action);
-        $this->assertSame('user@example.test', $data->properties['identifier']);
+        $this->assertSame('security', $record->type);
+        $this->assertSame('warning', $record->level);
+        $this->assertSame('login.failed', $record->action);
+        $this->assertSame('user@example.test', $record->properties['identifier']);
     }
 
     public function test_domain_from_event_sets_minimal_projection(): void
     {
         $event = new class {};
 
-        $data = (new DomainLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new DomainLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->fromEvent($event)
-            ->toData();
+            ->save();
 
-        $this->assertSame('domain', $data->type);
-        $this->assertStringStartsWith('domain.', $data->action);
-        $this->assertSame($event::class, $data->properties['event']);
+        $this->assertSame('domain', $record->type);
+        $this->assertStringStartsWith('domain.', $record->action);
+        $this->assertSame($event::class, $record->properties['event']);
     }
 
     public function test_domain_mapper_registry_uses_matching_mapper(): void
@@ -203,27 +206,27 @@ final class AdapterDataTest extends TestCase
             }
         });
 
-        $data = (new DomainLogAdapter($this->store, $this->sanitizer, $this->contextResolver, $registry))
+        $record = (new DomainLogAdapter($this->store, $this->sanitizer, $this->contextResolver, $registry))
             ->fromEvent($event)
-            ->toData();
+            ->save();
 
-        $this->assertSame('domain.invoice.paid', $data->action);
-        $this->assertSame('invoice', $data->subjectType);
-        $this->assertSame('123', $data->subjectId);
-        $this->assertTrue($data->properties['mapped']);
+        $this->assertSame('domain.invoice.paid', $record->action);
+        $this->assertSame('invoice', $record->subject_type);
+        $this->assertSame('123', $record->subject_id);
+        $this->assertTrue($record->properties['mapped']);
     }
 
     public function test_system_shortcuts_capture_exception_context(): void
     {
-        $data = (new SystemLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new SystemLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->jobFailed('ProcessJob', new RuntimeException('Nope'))
-            ->toData();
+            ->save();
 
-        $this->assertSame('system', $data->type);
-        $this->assertSame('error', $data->level);
-        $this->assertSame('job.failed', $data->action);
-        $this->assertSame('ProcessJob', $data->context['job']);
-        $this->assertSame(RuntimeException::class, $data->context['exception']['class']);
+        $this->assertSame('system', $record->type);
+        $this->assertSame('error', $record->level);
+        $this->assertSame('job.failed', $record->action);
+        $this->assertSame('ProcessJob', $record->context['job']);
+        $this->assertSame(RuntimeException::class, $record->context['exception']['class']);
     }
 
     public function test_with_request_fills_safe_request_context(): void
@@ -236,16 +239,16 @@ final class AdapterDataTest extends TestCase
             'REMOTE_ADDR' => '127.0.0.1',
         ]);
 
-        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('request.checked')
             ->withRequest($request)
-            ->toData();
+            ->save();
 
-        $this->assertSame('req-1', $data->requestId);
-        $this->assertSame('corr-1', $data->correlationId);
-        $this->assertSame('4bf92f3577b34da6a3ce929d0e0e4736', $data->traceId);
-        $this->assertSame('UnitTest', $data->userAgent);
-        $this->assertArrayNotHasKey('password', $data->context['request']);
+        $this->assertSame('req-1', $record->request_id);
+        $this->assertSame('corr-1', $record->correlation_id);
+        $this->assertSame('4bf92f3577b34da6a3ce929d0e0e4736', $record->trace_id);
+        $this->assertSame('UnitTest', $record->user_agent);
+        $this->assertArrayNotHasKey('password', $record->context['request']);
     }
 
     public function test_queue_dispatch_pushes_store_job_without_saving_immediately(): void
@@ -262,21 +265,46 @@ final class AdapterDataTest extends TestCase
                 && $job->data->action === 'queued.activity';
         });
 
-        $this->assertCount(0, $this->store->records);
+        $this->assertSame(0, ActivityLogRecord::query()->where('action', 'queued.activity')->count());
+    }
+
+    public function test_queued_job_handle_persists_to_mongodb(): void
+    {
+        Queue::fake();
+
+        $job = null;
+
+        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('queued.persisted')
+            ->queue('logging')
+            ->dispatch();
+
+        Queue::assertPushed(StoreActivityLogJob::class, function (StoreActivityLogJob $queuedJob) use (&$job): bool {
+            $job = $queuedJob;
+
+            return $queuedJob->data->action === 'queued.persisted';
+        });
+
+        $this->assertInstanceOf(StoreActivityLogJob::class, $job);
+
+        $job->handle($this->store);
+
+        $record = ActivityLogRecord::query()->where('action', 'queued.persisted')->first();
+
+        $this->assertNotNull($record);
     }
 
     public function test_save_remains_synchronous_even_after_queue_target_is_set(): void
     {
         Queue::fake();
 
-        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
             ->action('sync.activity')
             ->queue('logging')
             ->save();
 
         Queue::assertNothingPushed();
-        $this->assertCount(1, $this->store->records);
-        $this->assertSame('sync.activity', $this->store->records[0]->action);
+        $this->assertSame('sync.activity', $record->action);
     }
 
     public function test_sync_dispatch_persists_immediately_without_queue_job(): void
@@ -292,38 +320,8 @@ final class AdapterDataTest extends TestCase
 
         $this->assertInstanceOf(LogAdapterInterface::class, $adapter);
         Queue::assertNothingPushed();
-        $this->assertCount(1, $this->store->records);
-        $this->assertSame('sync.dispatch', $this->store->records[0]->action);
-    }
+        $record = ActivityLogRecord::query()->where('action', 'sync.dispatch')->first();
 
-    public function test_logs_activity_trait_records_filtered_dirty_changes(): void
-    {
-        $model = new AuditedTestModel(['id' => 1, 'name' => 'Old', 'secret' => 'before']);
-        $model->syncOriginal();
-        $model->forceFill(['name' => 'New', 'secret' => 'after']);
-        $model->options = ActivityLogOptions::make()
-            ->logOnly(['name', 'secret'])
-            ->except(['secret'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
-
-        $model->logForTest('updated');
-
-        $this->assertCount(1, $this->store->records);
-        $this->assertSame('model.updated', $this->store->records[0]->action);
-        $this->assertSame(['name' => ['old' => 'Old', 'new' => 'New']], $this->store->records[0]->changes);
-    }
-
-    public function test_logs_activity_trait_skips_empty_logs_when_configured(): void
-    {
-        $model = new AuditedTestModel(['id' => 1, 'name' => 'Same']);
-        $model->syncOriginal();
-        $model->options = ActivityLogOptions::make()
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
-
-        $model->logForTest('updated');
-
-        $this->assertCount(0, $this->store->records);
+        $this->assertNotNull($record);
     }
 }

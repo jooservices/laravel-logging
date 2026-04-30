@@ -29,3 +29,15 @@ MONGODB_URI=mongodb://localhost:27017 composer run test:integration
 ```
 
 Without MongoDB, integration tests skip with an explicit message.
+
+Testing policy for this repository:
+
+- Use the real persistence flow through facade or manager, adapter, DTO, store,
+	repository, model, and MongoDB.
+- Do not mock or fake internal package services.
+- Do not add `ActivityLog::fake()` or fake/assertion helpers such as
+	`assertRecorded()`.
+- Allowed fakes are limited to Laravel framework boundaries such as
+	`Queue::fake()`, `Event::fake()`, and temporary filesystem fakes.
+- When queue dispatch is faked, keep a companion real job-handle persistence
+	assertion in the suite.

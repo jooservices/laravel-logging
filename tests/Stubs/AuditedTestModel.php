@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace JOOservices\LaravelLogging\Tests\Stubs;
 
-use Illuminate\Database\Eloquent\Model;
 use JOOservices\LaravelLogging\ActivityLogOptions;
 use JOOservices\LaravelLogging\Concerns\LogsActivity;
+use MongoDB\Laravel\Eloquent\Model;
 
 final class AuditedTestModel extends Model
 {
     use LogsActivity;
 
     protected $guarded = [];
+
+    protected $connection = 'mongodb';
+
+    protected $table = 'audited_test_models';
 
     public $timestamps = false;
 

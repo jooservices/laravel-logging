@@ -27,6 +27,10 @@ The manager interface stays registry-based. Built-in adapters are configured in
 `config/laravel-logging.php`, and custom adapters use `register()` or
 `replace()` instead of new manager methods.
 
+`ActivityLogRepository` is an internal repository aligned to
+`jooservices/laravel-repository`. It is not a public repository customization
+point in v1.
+
 `save()` is synchronous and returns `ActivityLogRecord`. Async logging uses
 `queue(...)->dispatch()`, which dispatches `StoreActivityLogJob`.
 `sync()->dispatch()` records immediately.

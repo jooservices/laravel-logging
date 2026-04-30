@@ -6,8 +6,11 @@
 - Queue logging is available only through `queue(...)->dispatch()`.
 - `save()` remains synchronous by design.
 - Retention is command-based and prunes by `occurred_at`.
+- `ActivityLogRepository` is internal and not a supported public extension point in v1.
 - Indexes are created by `php artisan activity-log:indexes`; normal requests do
   not create indexes.
+- `php artisan activity-log:doctor` reports runtime readiness, but it does not
+  repair configuration or connectivity problems automatically.
 - Nested `properties`, `context`, and `changes` keys are not indexed in v1.
 - Model audit logging is opt-in only through `LogsActivity`.
 - The package does not provide SQL storage, a UI dashboard, global automatic
@@ -19,6 +22,9 @@
 
 - Documented synchronous `save()` versus queued `dispatch()` behavior.
 - Documented MongoDB index command and integration-test MongoDB requirement.
+- Added `activity-log:doctor` for runtime health checks.
+- Removed unsupported public repository customization guidance.
+- Enforced a no-internal-mocks, real-MongoDB persistence testing policy.
 - Added package-specific GitHub Copilot instructions and AI skills for
   architecture, workflow, testing, docs sync, adapter registry, and MongoDB
   persistence.

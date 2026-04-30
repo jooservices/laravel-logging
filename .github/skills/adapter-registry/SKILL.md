@@ -32,6 +32,7 @@ description: "Use when changing adapter registration, manager resolution, magic 
 - `LogAdapterInterface` must include `dispatch(): void`.
 - `queue(?string $queue = null)->dispatch()` dispatches `StoreActivityLogJob`.
 - `sync()->dispatch()` records immediately.
+- Adapter tests must use real package services; do not add fake store, repository, or adapter layers.
 
 ## Domain mapper contract
 
