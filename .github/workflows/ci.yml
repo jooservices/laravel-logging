@@ -11,6 +11,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     strategy:
       fail-fast: false
       matrix:
@@ -28,5 +39,8 @@ jobs:
       - uses: ramsey/composer-install@v3
 
       - run: composer validate
-      - run: composer run lint
-      - run: composer run test
+      - run: composer audit
+      - run: composer run check
+        env:
+          MONGODB_URI: mongodb://127.0.0.1:27017
+          MONGODB_DATABASE: jooservices_logging_ci

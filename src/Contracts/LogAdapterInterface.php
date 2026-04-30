@@ -68,6 +68,8 @@ interface LogAdapterInterface
 
     public function queue(?string $queue = null): static;
 
+    public function dispatch(): void;
+
     public function toData(): ActivityLogData;
 
     public function save(): ActivityLogRecord;

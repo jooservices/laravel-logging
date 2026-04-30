@@ -26,3 +26,14 @@ ActivityLog::crawler()->action('crawler.completed')->save();
 ```
 
 Sensitive keys are redacted from structured payloads using exact key matching.
+
+Async logging:
+
+```php
+ActivityLog::system()
+    ->jobCompleted(ProcessProviderJob::class)
+    ->queue('logging')
+    ->dispatch();
+```
+
+`save()` is always synchronous; `queue()` does not change the behavior of `save()`. `sync()->dispatch()` records immediately without pushing a queue job.

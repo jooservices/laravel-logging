@@ -20,6 +20,7 @@ use JOOservices\LaravelLogging\DTO\ActivityLogData;
 use JOOservices\LaravelLogging\DTO\LogActorData;
 use JOOservices\LaravelLogging\DTO\LogSubjectData;
 use JOOservices\LaravelLogging\Exceptions\InvalidLogDataException;
+use JOOservices\LaravelLogging\Jobs\StoreActivityLogJob;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JsonSerializable;
 use Throwable;
@@ -67,9 +68,9 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
     protected DateTimeInterface|string|null $occurredAt = null;
 
-    protected bool $shouldQueue = false;
-
     protected ?string $queueName = null;
+
+    protected bool $syncDispatch = false;
 
     public function __construct(
         protected readonly LogStoreInterface $store,
@@ -229,7 +230,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
     public function sync(): static
     {
-        $this->shouldQueue = false;
+        $this->syncDispatch = true;
         $this->queueName = null;
 
         return $this;
@@ -237,7 +238,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
     public function queue(?string $queue = null): static
     {
-        $this->shouldQueue = true;
+        $this->syncDispatch = false;
         $this->queueName = $queue;
 
         return $this;
@@ -252,12 +253,6 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         $properties = $this->sanitizer->sanitize($this->properties);
         $context = $this->sanitizer->sanitize($this->context);
         $changes = $this->sanitizer->sanitize($this->changes);
-
-        if ($this->shouldQueue) {
-            $context = array_replace_recursive($context, [
-                'logging' => ['queued' => true, 'queue' => $this->queueName],
-            ]);
-        }
 
         return new ActivityLogData(
             uuid: (string) Str::uuid(),
@@ -284,6 +279,23 @@ abstract class BaseLogAdapter implements LogAdapterInterface
             changes: $changes,
             occurredAt: $this->occurredAt ?? CarbonImmutable::now(),
         );
+    }
+
+    public function dispatch(): void
+    {
+        $data = $this->toData();
+
+        if ($this->syncDispatch) {
+            $this->store->record($data);
+
+            return;
+        }
+
+        $dispatch = StoreActivityLogJob::dispatch($data);
+
+        if ($this->queueName !== null) {
+            $dispatch->onQueue($this->queueName);
+        }
     }
 
     public function save(): ActivityLogRecord

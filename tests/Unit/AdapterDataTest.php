@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JOOservices\LaravelLogging\Tests\Unit;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Queue;
 use JOOservices\LaravelLogging\Adapters\ActivityLogAdapter;
 use JOOservices\LaravelLogging\Adapters\AuditLogAdapter;
 use JOOservices\LaravelLogging\Adapters\DomainLogAdapter;
@@ -13,6 +14,7 @@ use JOOservices\LaravelLogging\Adapters\SystemLogAdapter;
 use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
+use JOOservices\LaravelLogging\Jobs\StoreActivityLogJob;
 use JOOservices\LaravelLogging\Tests\Stubs\TestModel;
 use JOOservices\LaravelLogging\Tests\TestCase;
 use RuntimeException;
@@ -62,6 +64,21 @@ final class AdapterDataTest extends TestCase
         $this->assertNotNull($data->occurredAt);
     }
 
+    public function test_changes_are_sanitized_recursively(): void
+    {
+        $data = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('credentials.updated')
+            ->changes([
+                'password' => ['old' => 'before', 'new' => 'after'],
+                'profile' => ['name' => 'Taylor', 'token' => 'abc'],
+            ])
+            ->toData();
+
+        $this->assertSame('[REDACTED]', $data->changes['password']);
+        $this->assertSame('[REDACTED]', $data->changes['profile']['token']);
+        $this->assertSame('Taylor', $data->changes['profile']['name']);
+    }
+
     public function test_string_targets_are_not_parsed(): void
     {
         $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
@@ -103,6 +120,17 @@ final class AdapterDataTest extends TestCase
             ->toData();
 
         $this->assertSame(['enabled' => ['old' => false, 'new' => true]], $data->changes);
+    }
+
+    public function test_audit_log_only_dirty_can_include_unchanged_fields(): void
+    {
+        $data = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('config.checked')
+            ->logOnlyDirty(false)
+            ->changesFrom(['enabled' => true], ['enabled' => true])
+            ->toData();
+
+        $this->assertSame(['enabled' => ['old' => true, 'new' => true]], $data->changes);
     }
 
     public function test_security_login_failed_sets_action_level_and_properties(): void
@@ -163,5 +191,50 @@ final class AdapterDataTest extends TestCase
         $this->assertSame('4bf92f3577b34da6a3ce929d0e0e4736', $data->traceId);
         $this->assertSame('UnitTest', $data->userAgent);
         $this->assertArrayNotHasKey('password', $data->context['request']);
+    }
+
+    public function test_queue_dispatch_pushes_store_job_without_saving_immediately(): void
+    {
+        Queue::fake();
+
+        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('queued.activity')
+            ->queue('logging')
+            ->dispatch();
+
+        Queue::assertPushed(StoreActivityLogJob::class, function (StoreActivityLogJob $job): bool {
+            return $job->queue === 'logging'
+                && $job->data->action === 'queued.activity';
+        });
+
+        $this->assertCount(0, $this->store->records);
+    }
+
+    public function test_save_remains_synchronous_even_after_queue_target_is_set(): void
+    {
+        Queue::fake();
+
+        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('sync.activity')
+            ->queue('logging')
+            ->save();
+
+        Queue::assertNothingPushed();
+        $this->assertCount(1, $this->store->records);
+        $this->assertSame('sync.activity', $this->store->records[0]->action);
+    }
+
+    public function test_sync_dispatch_persists_immediately_without_queue_job(): void
+    {
+        Queue::fake();
+
+        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('sync.dispatch')
+            ->sync()
+            ->dispatch();
+
+        Queue::assertNothingPushed();
+        $this->assertCount(1, $this->store->records);
+        $this->assertSame('sync.dispatch', $this->store->records[0]->action);
     }
 }

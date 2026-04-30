@@ -4,11 +4,13 @@ Quality commands:
 
 ```bash
 composer validate
+composer audit
 composer run lint:pint
 composer run lint:phpcs
 composer run lint:phpstan
 composer run lint:phpmd
 composer run test
+composer run check
 ```
 
 Pint is the master formatter. If another style tool disagrees with Pint, adjust that tool instead of changing Pint output.
@@ -20,3 +22,5 @@ MONGODB_URI=mongodb://localhost:27017 composer run test:integration
 ```
 
 Without MongoDB, integration tests skip with an explicit message. Unit tests still cover manager, registry, adapters, DTO building, sanitization, and request context behavior.
+
+CaptainHook installs through Composer and runs a lightweight pre-commit style check plus the full `composer check` gate before push.

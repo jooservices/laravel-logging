@@ -15,9 +15,9 @@ final class ActivityLogRepository extends EloquentRepository implements CrudRepo
 {
     use HasCrud;
 
-    public function __construct()
+    public function __construct(?ActivityLogRecord $model = null)
     {
-        parent::__construct(new ActivityLogRecord);
+        parent::__construct($model ?? new ActivityLogRecord);
     }
 
     public function record(ActivityLogData $data): ActivityLogRecord

@@ -1,0 +1,12 @@
+---
+description: Laravel logging package rules
+globs:
+  - "**/*.php"
+---
+
+- MongoDB collection `activity_logs` is the only v1 storage target.
+- Adapters are stateful and resolved fresh from `LogAdapterRegistry`.
+- Do not add concrete adapter methods to `ActivityLogManagerInterface`.
+- DTOs should extend `JOOservices\Dto\Core\Dto` where they carry structured log data.
+- Repositories must follow `jooservices/laravel-repository` patterns.
+- `queue(...)->dispatch()` is async; `sync()->dispatch()` and `save()` are sync.

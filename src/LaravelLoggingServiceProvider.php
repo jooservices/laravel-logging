@@ -11,6 +11,9 @@ use JOOservices\LaravelLogging\Contracts\LogAdapterRegistryInterface;
 use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
+use JOOservices\LaravelLogging\Exceptions\LoggingConfigurationException;
+use JOOservices\LaravelLogging\Models\ActivityLogRecord;
+use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
 use JOOservices\LaravelLogging\Services\DefaultLogContextResolver;
 use JOOservices\LaravelLogging\Services\DefaultLogSanitizer;
 
@@ -28,6 +31,32 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
                 keys: $keys,
                 replacement: (string) config('laravel-logging.sanitize.replacement', '[REDACTED]'),
             );
+        });
+
+        $this->app->bind(ActivityLogRecord::class, function (): ActivityLogRecord {
+            $model = (string) config('laravel-logging.model', ActivityLogRecord::class);
+
+            if ($model !== ActivityLogRecord::class && ! is_subclass_of($model, ActivityLogRecord::class)) {
+                throw new LoggingConfigurationException('Configured activity log model must extend '.ActivityLogRecord::class.'.');
+            }
+
+            return new $model;
+        });
+
+        $this->app->singleton(ActivityLogRepository::class, function (): ActivityLogRepository {
+            $repository = (string) config('laravel-logging.repository', ActivityLogRepository::class);
+
+            if ($repository === ActivityLogRepository::class) {
+                return new ActivityLogRepository($this->app->make(ActivityLogRecord::class));
+            }
+
+            $resolved = $this->app->make($repository);
+
+            if (! $resolved instanceof ActivityLogRepository) {
+                throw new LoggingConfigurationException('Configured activity log repository must extend '.ActivityLogRepository::class.'.');
+            }
+
+            return $resolved;
         });
 
         $this->app->singleton(LogContextResolverInterface::class, DefaultLogContextResolver::class);

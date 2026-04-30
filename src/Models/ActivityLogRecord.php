@@ -31,7 +31,7 @@ use MongoDB\Laravel\Eloquent\Model;
  * @property array<string, mixed> $context
  * @property array<string, mixed> $changes
  */
-final class ActivityLogRecord extends Model
+class ActivityLogRecord extends Model
 {
     protected $guarded = [];
 
