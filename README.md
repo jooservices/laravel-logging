@@ -122,11 +122,14 @@ Run `php artisan activity-log:indexes` to create supported top-level indexes. Ne
 
 ```bash
 composer validate
-composer audit
-composer run lint
+composer run lint:fix
 composer run lint:all
 composer run test
 composer run check
+composer audit
+composer run ci
 ```
 
 MongoDB integration tests require a running MongoDB server at `MONGODB_URI` or `mongodb://localhost:27017`. Without MongoDB, integration tests are skipped with a clear message.
+
+AI contributors should follow `AGENTS.md` and the package-specific skills in `.github/skills/`. When code, config, tooling, workflow, architecture, or behavior changes, update the matching docs and AI guidance before committing.

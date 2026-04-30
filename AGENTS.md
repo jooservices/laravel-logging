@@ -1,18 +1,38 @@
-# Agent Notes
+# JOOservices Laravel Logging Agent Instructions
 
-- This package stores structured logs in MongoDB through `ActivityLogRecord`, `ActivityLogRepository`, and `MongoLogStore`.
-- Runtime target is PHP 8.5 and Laravel 12.
+This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-logging`.
+
+## Before coding
+
+- Inspect `git status`, `composer.json`, relevant docs, config, tests, and source files first.
+- Read the relevant `.github/skills/*/SKILL.md` files before non-trivial changes.
+- Use `jooservices/dto` as the standard for tooling, docs, AI guidance, and PHP style; apply only relevant patterns.
+- Use `jooservices/laravel-repository` as the source of truth before changing repository construction or persistence.
+- Stop and report evidence when package APIs, MongoDB Laravel behavior, or JOOservices standards conflict.
+
+## Package rules
+
 - The only v1 storage backend is MongoDB collection `activity_logs`.
-- Persistence must go through the repository/store path. Adapters must not call models directly.
-- Internal log payloads should be represented by DTOs, especially `ActivityLogData`.
+- Persistence must flow through `ActivityLogData` -> `MongoLogStore` -> `ActivityLogRepository` -> `ActivityLogRecord`.
+- Adapters must not call models directly or bypass the store/repository path.
+- Internal payloads should be DTO-first, especially `ActivityLogData`.
 - Adapter resolution is registry-based. Do not add hard-coded built-in adapter methods to the manager interface.
 - Built-in adapters are configured through `config/laravel-logging.php`; custom adapters use `register()` or `replace()`.
 - Adapter instances are stateful and must be resolved fresh for each log.
-- String actor, subject, and causer inputs are stored as named identifiers only; do not parse delimiters or infer IDs.
-- Use `byExternal()`, `onExternal()`, and `causedByExternal()` for explicit external type/ID references.
-- `save()` is synchronous and returns `ActivityLogRecord`; async logging must use `queue(...)->dispatch()`. `sync()->dispatch()` records immediately.
+- String actor, subject, and causer inputs are named identifiers only. Do not parse delimiters or infer IDs.
+- Use `byExternal()`, `onExternal()`, and `causedByExternal()` for explicit external type/id references.
+- `save()` is synchronous and returns `ActivityLogRecord`.
+- Async logging must use `queue(...)->dispatch()`, which dispatches `StoreActivityLogJob`.
+- `sync()->dispatch()` records immediately without pushing a queue job.
 - Sanitization must recursively redact exact sensitive keys in `properties`, `context`, and `changes`.
 - Request context must not log full request payloads, cookies, or auth headers by default.
+
+## Quality and docs gate
+
 - Pint is the master formatter. Tune PHPCS/php-cs-fixer around Pint, not the reverse.
-- Run `composer validate`, Pint, static analysis, lints, and tests before committing.
-- Stop and ask when package APIs, Laravel/MongoDB behavior, or JOOservices conventions differ from the current source of truth.
+- Before commit, run `composer validate`, `composer run lint:fix`, `composer run lint:all`, `composer run test`, and `composer run check`.
+- Also run `composer audit` and `composer run ci` when configured and environment support is available.
+- Fix all warnings, notices, and errors. Do not commit when checks fail.
+- If code, config, tooling, workflow, architecture, or user-facing behavior changes, update relevant docs before commit.
+- If contributor workflow, package rules, commands, or architecture guidance changes, update `AGENTS.md` and `.github/skills` before commit.
+- After successful work, commit local changes with author `Viet Vu <jooservices@gmail.com>` and leave the working tree clean.
