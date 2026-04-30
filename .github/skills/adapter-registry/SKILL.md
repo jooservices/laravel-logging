@@ -32,4 +32,10 @@ description: "Use when changing adapter registration, manager resolution, magic 
 - `LogAdapterInterface` must include `dispatch(): void`.
 - `queue(?string $queue = null)->dispatch()` dispatches `StoreActivityLogJob`.
 - `sync()->dispatch()` records immediately.
+
+## Domain mapper contract
+
+- `domain()->fromEvent($event)` checks registered mappers before fallback projection.
+- If no mapper supports the event, keep the event-class fallback behavior.
+- Mappers must not bypass adapter state or the normal store/repository path.
 - `save()` remains synchronous and returns `ActivityLogRecord`.

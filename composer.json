@@ -57,12 +57,14 @@
         "lint:phpcs": "vendor/bin/phpcs --standard=phpcs.xml",
         "lint:phpstan": "XDEBUG_MODE=off vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=512M",
         "lint:phpmd": "php -d error_reporting=6143 vendor/bin/phpmd src text phpmd.xml",
+        "format:sanity": "php scripts/check-format-sanity.php",
         "lint": [
             "@lint:pint",
             "@lint:phpcs",
             "@lint:phpstan"
         ],
         "lint:all": [
+            "@format:sanity",
             "@lint",
             "@lint:phpmd",
             "@lint:cs"

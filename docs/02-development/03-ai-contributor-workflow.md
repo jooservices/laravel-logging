@@ -1,0 +1,16 @@
+# AI Contributor Workflow
+
+Before non-trivial changes:
+
+1. Inspect `git status`, `composer.json`, docs, config, tests, and source files.
+2. Read relevant `.github/skills/*/SKILL.md` files.
+3. Compare tooling and docs decisions with `jooservices/dto`.
+4. Compare repository and persistence decisions with `jooservices/laravel-repository`.
+5. Stop on unclear APIs, conflicting package behavior, or unsupported feature requests.
+
+Any code, config, tooling, docs, workflow, architecture, or user-facing behavior
+change must update matching docs, `AGENTS.md`, and `.github/skills` before
+commit.
+
+Never bypass CaptainHook with `--no-verify`. Commit only after the full local
+gate passes, and leave the working tree clean.

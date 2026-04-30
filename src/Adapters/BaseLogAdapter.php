@@ -221,6 +221,20 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this;
     }
 
+    public function batchId(string|int $batchId): static
+    {
+        $this->context['batch_id'] = (string) $batchId;
+
+        return $this;
+    }
+
+    public function workflowId(string|int $workflowId): static
+    {
+        $this->context['workflow_id'] = (string) $workflowId;
+
+        return $this;
+    }
+
     public function occurredAt(DateTimeInterface|string|null $occurredAt): static
     {
         $this->occurredAt = $occurredAt;

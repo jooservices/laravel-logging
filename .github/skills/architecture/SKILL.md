@@ -15,7 +15,7 @@ description: "Use when changing package architecture, public logging flow, adapt
 - `src/Repositories/ActivityLogRepository.php`
 - `src/Models/ActivityLogRecord.php`
 - `config/laravel-logging.php`
-- `docs/00-architecture/architecture-overview.md`
+- `docs/00-architecture/01-overview.md`
 
 ## Rules
 
@@ -25,6 +25,8 @@ description: "Use when changing package architecture, public logging flow, adapt
 - Do not hard-code built-in adapter methods into the manager interface.
 - Treat adapters as stateful builders that must be resolved fresh for each log.
 - Keep public behavior documented and tested when architecture changes.
+- Query, retention, export, model audit, and domain mapper APIs must stay within
+  the existing facade, adapter, DTO, store, repository, and model boundaries.
 
 ## Stop conditions
 

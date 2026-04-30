@@ -27,6 +27,19 @@ return [
         'system' => SystemLogAdapter::class,
     ],
 
+    'domain_mappers' => [],
+
+    'retention' => [
+        'enabled' => true,
+        'defaults' => [
+            'activity' => 90,
+            'audit' => 365,
+            'security' => 365,
+            'domain' => 90,
+            'system' => 30,
+        ],
+    ],
+
     'sanitize' => [
         'keys' => [
             'password',

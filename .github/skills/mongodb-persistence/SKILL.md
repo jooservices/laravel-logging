@@ -13,7 +13,7 @@ description: "Use when changing MongoDB model, repository, store, indexes, persi
 - `src/Jobs/StoreActivityLogJob.php`
 - `src/Console/Commands/InstallActivityLogIndexesCommand.php`
 - `config/laravel-logging.php`
-- `docs/01-usage/mongodb-schema.md`
+- `docs/00-architecture/02-mongodb-persistence.md`
 - `tests/Integration/PersistenceTest.php`
 
 ## Rules
@@ -25,6 +25,8 @@ description: "Use when changing MongoDB model, repository, store, indexes, persi
 - Do not let adapters or jobs call the model directly.
 - Index setup belongs in `activity-log:indexes` and matching docs.
 - Nested `properties`, `context`, and `changes` keys are not indexed in v1.
+- Retention pruning and export commands must query records through repository/model boundaries.
+- Batch and workflow IDs are stored under `context.batch_id` and `context.workflow_id`.
 
 ## Stop conditions
 

@@ -6,16 +6,21 @@ namespace JOOservices\LaravelLogging\Tests\Unit;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Queue;
+use JOOservices\LaravelLogging\ActivityLogOptions;
 use JOOservices\LaravelLogging\Adapters\ActivityLogAdapter;
 use JOOservices\LaravelLogging\Adapters\AuditLogAdapter;
 use JOOservices\LaravelLogging\Adapters\DomainLogAdapter;
 use JOOservices\LaravelLogging\Adapters\SecurityLogAdapter;
 use JOOservices\LaravelLogging\Adapters\SystemLogAdapter;
+use JOOservices\LaravelLogging\Contracts\DomainLogAdapterInterface;
+use JOOservices\LaravelLogging\Contracts\DomainLogMapperInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
+use JOOservices\LaravelLogging\DomainLogMapperRegistry;
 use JOOservices\LaravelLogging\Jobs\StoreActivityLogJob;
+use JOOservices\LaravelLogging\Tests\Stubs\AuditedTestModel;
 use JOOservices\LaravelLogging\Tests\Stubs\TestModel;
 use JOOservices\LaravelLogging\Tests\TestCase;
 use RuntimeException;
@@ -78,6 +83,20 @@ final class AdapterDataTest extends TestCase
         $this->assertSame('[REDACTED]', $data->changes['password']);
         $this->assertSame('[REDACTED]', $data->changes['profile']['token']);
         $this->assertSame('Taylor', $data->changes['profile']['name']);
+    }
+
+    public function test_batch_and_workflow_helpers_store_string_context_ids(): void
+    {
+        $data = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+            ->action('crawler.batch.completed')
+            ->context(['provider' => 'onejav'])
+            ->batchId(123)
+            ->workflowId('crawl-456')
+            ->toData();
+
+        $this->assertSame('onejav', $data->context['provider']);
+        $this->assertSame('123', $data->context['batch_id']);
+        $this->assertSame('crawl-456', $data->context['workflow_id']);
     }
 
     public function test_string_targets_are_not_parsed(): void
@@ -157,6 +176,41 @@ final class AdapterDataTest extends TestCase
         $this->assertSame('domain', $data->type);
         $this->assertStringStartsWith('domain.', $data->action);
         $this->assertSame($event::class, $data->properties['event']);
+    }
+
+    public function test_domain_mapper_registry_uses_matching_mapper(): void
+    {
+        $event = new class
+        {
+            public string $subject = 'invoice';
+        };
+        $registry = new DomainLogMapperRegistry($this->app);
+
+        $registry->register(fn (): DomainLogMapperInterface => new class implements DomainLogMapperInterface
+        {
+            public function supports(object $event): bool
+            {
+                return property_exists($event, 'subject');
+            }
+
+            public function map(object $event, DomainLogAdapterInterface $adapter): DomainLogAdapterInterface
+            {
+                return $adapter
+                    ->action('domain.invoice.paid')
+                    ->onExternal($event->subject, 123)
+                    ->properties(['mapped' => true])
+                    ->occurredAt('2026-01-01 00:00:00');
+            }
+        });
+
+        $data = (new DomainLogAdapter($this->store, $this->sanitizer, $this->contextResolver, $registry))
+            ->fromEvent($event)
+            ->toData();
+
+        $this->assertSame('domain.invoice.paid', $data->action);
+        $this->assertSame('invoice', $data->subjectType);
+        $this->assertSame('123', $data->subjectId);
+        $this->assertTrue($data->properties['mapped']);
     }
 
     public function test_system_shortcuts_capture_exception_context(): void
@@ -240,5 +294,36 @@ final class AdapterDataTest extends TestCase
         Queue::assertNothingPushed();
         $this->assertCount(1, $this->store->records);
         $this->assertSame('sync.dispatch', $this->store->records[0]->action);
+    }
+
+    public function test_logs_activity_trait_records_filtered_dirty_changes(): void
+    {
+        $model = new AuditedTestModel(['id' => 1, 'name' => 'Old', 'secret' => 'before']);
+        $model->syncOriginal();
+        $model->forceFill(['name' => 'New', 'secret' => 'after']);
+        $model->options = ActivityLogOptions::make()
+            ->logOnly(['name', 'secret'])
+            ->except(['secret'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+
+        $model->logForTest('updated');
+
+        $this->assertCount(1, $this->store->records);
+        $this->assertSame('model.updated', $this->store->records[0]->action);
+        $this->assertSame(['name' => ['old' => 'Old', 'new' => 'New']], $this->store->records[0]->changes);
+    }
+
+    public function test_logs_activity_trait_skips_empty_logs_when_configured(): void
+    {
+        $model = new AuditedTestModel(['id' => 1, 'name' => 'Same']);
+        $model->syncOriginal();
+        $model->options = ActivityLogOptions::make()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+
+        $model->logForTest('updated');
+
+        $this->assertCount(0, $this->store->records);
     }
 }

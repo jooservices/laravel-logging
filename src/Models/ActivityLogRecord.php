@@ -30,6 +30,9 @@ use MongoDB\Laravel\Eloquent\Model;
  * @property array<string, mixed> $properties
  * @property array<string, mixed> $context
  * @property array<string, mixed> $changes
+ * @property \Illuminate\Support\Carbon|null $occurred_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class ActivityLogRecord extends Model
 {

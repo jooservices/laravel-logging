@@ -23,6 +23,14 @@ php artisan activity-log:indexes
 
 The default MongoDB collection is `activity_logs`.
 
+Configure the MongoDB connection used by the package:
+
+```env
+ACTIVITY_LOG_CONNECTION=mongodb
+ACTIVITY_LOG_COLLECTION=activity_logs
+MONGODB_URI=mongodb://localhost:27017
+```
+
 ## Usage
 
 ```php
@@ -53,6 +61,16 @@ ActivityLog::system()
 
 ActivityLog::domain()
     ->fromEvent($event)
+    ->save();
+```
+
+Trace batch and workflow IDs through normal context fields:
+
+```php
+ActivityLog::activity()
+    ->action('crawler.item.imported')
+    ->batchId($batchId)
+    ->workflowId($workflowId)
     ->save();
 ```
 
@@ -110,6 +128,78 @@ ActivityLog::crawler()
 
 `ActivityLog::crawler()` is sugar for `ActivityLog::adapter('crawler')`. Magic adapter methods do not accept parameters.
 
+## Querying
+
+Use `query()` or `records()` for common reporting filters:
+
+```php
+$records = ActivityLog::query()
+    ->type('audit')
+    ->action('config.updated')
+    ->forSubject($config)
+    ->byActor($user)
+    ->correlationId($id)
+    ->between($from, $to)
+    ->latest()
+    ->paginate();
+```
+
+String identity filters follow logging semantics: strings are named identifiers
+unless an explicit ID is provided.
+
+## Retention And Export
+
+Prune old records with configured per-type retention:
+
+```bash
+php artisan activity-log:prune --dry-run
+php artisan activity-log:prune --type=system --days=30 --force
+```
+
+Export audit or security records as JSONL or CSV:
+
+```bash
+php artisan activity-log:export --type=audit --from=2026-01-01 --format=jsonl --output=storage/app/audit.jsonl
+```
+
+JSONL includes the full stored document array. CSV exports core top-level fields.
+
+## Model Audit Logging
+
+Model logging is opt-in only:
+
+```php
+use JOOservices\LaravelLogging\ActivityLogOptions;
+use JOOservices\LaravelLogging\Concerns\LogsActivity;
+
+class Setting extends Model
+{
+    use LogsActivity;
+
+    protected function activityLogOptions(): ActivityLogOptions
+    {
+        return ActivityLogOptions::make()
+            ->logOnly(['name', 'value', 'enabled'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+}
+```
+
+The trait records audit logs for created, updated, deleted, and restored model
+events when the model opts in.
+
+## Domain Event Mappers
+
+`domain()->fromEvent($event)` uses registered domain mappers first, then falls
+back to the default event-class projection.
+
+```php
+ActivityLog::domain()
+    ->fromEvent($event)
+    ->save();
+```
+
 ## Sanitization
 
 Sensitive keys are recursively redacted in `properties`, `context`, and `changes` using exact key matching. Defaults include `password`, `token`, `secret`, `api_key`, `authorization`, and `cookie`.
@@ -119,6 +209,16 @@ Sensitive keys are recursively redacted in `properties`, `context`, and `changes
 Documents include classification fields, actor/subject/causer references, source and trace IDs, client context, structured `properties`, `context`, `changes`, `occurred_at`, and Laravel timestamps.
 
 Run `php artisan activity-log:indexes` to create supported top-level indexes. Nested `properties`, `context`, and `changes` keys are not indexed in v1.
+
+Core fields:
+
+- `uuid`, `type`, `adapter`, `level`, `action`, `message`
+- `actor_type`, `actor_id`
+- `subject_type`, `subject_id`
+- `causer_type`, `causer_id`
+- `request_id`, `correlation_id`, `trace_id`
+- `properties`, `context`, `changes`
+- `occurred_at`, `created_at`, `updated_at`
 
 ## Development
 
@@ -130,6 +230,7 @@ composer run test
 composer run check
 composer audit
 composer run ci
+composer run format:sanity
 ```
 
 MongoDB integration tests require a running MongoDB server at `MONGODB_URI` or `mongodb://localhost:27017`. Without MongoDB, integration tests are skipped with a clear message.

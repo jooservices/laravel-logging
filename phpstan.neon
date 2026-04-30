@@ -6,5 +6,7 @@ parameters:
     level: 6
     paths:
         - src
+    scanFiles:
+        - tests/Stubs/AuditedTestModel.php
     tmpDir: build/phpstan
     treatPhpDocTypesAsCertain: false

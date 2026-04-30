@@ -10,6 +10,10 @@ interface ActivityLogManagerInterface
 {
     public function adapter(string|BackedEnum $name): LogAdapterInterface;
 
+    public function query(): \JOOservices\LaravelLogging\ActivityLogQuery;
+
+    public function records(): \JOOservices\LaravelLogging\ActivityLogQuery;
+
     public function register(string|BackedEnum $name, string|callable $adapter): void;
 
     public function replace(string|BackedEnum $name, string|callable $adapter): void;

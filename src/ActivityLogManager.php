@@ -9,14 +9,28 @@ use JOOservices\LaravelLogging\Contracts\ActivityLogManagerInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterRegistryInterface;
 use JOOservices\LaravelLogging\Exceptions\InvalidLogDataException;
+use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
 
 final class ActivityLogManager implements ActivityLogManagerInterface
 {
-    public function __construct(private readonly LogAdapterRegistryInterface $registry) {}
+    public function __construct(
+        private readonly LogAdapterRegistryInterface $registry,
+        private readonly ActivityLogRepository $repository,
+    ) {}
 
     public function adapter(string|BackedEnum $name): LogAdapterInterface
     {
         return $this->registry->resolve($name);
+    }
+
+    public function query(): ActivityLogQuery
+    {
+        return new ActivityLogQuery($this->repository);
+    }
+
+    public function records(): ActivityLogQuery
+    {
+        return $this->query();
     }
 
     public function register(string|BackedEnum $name, string|callable $adapter): void

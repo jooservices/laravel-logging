@@ -25,6 +25,7 @@ composer run test
 composer run check
 composer audit
 composer run ci
+composer run format:sanity
 ```
 
 ## Testing expectations

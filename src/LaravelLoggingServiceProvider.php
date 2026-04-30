@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace JOOservices\LaravelLogging;
 
 use Illuminate\Support\ServiceProvider;
+use JOOservices\LaravelLogging\Console\Commands\ExportActivityLogsCommand;
 use JOOservices\LaravelLogging\Console\Commands\InstallActivityLogIndexesCommand;
+use JOOservices\LaravelLogging\Console\Commands\PruneActivityLogsCommand;
 use JOOservices\LaravelLogging\Contracts\ActivityLogManagerInterface;
+use JOOservices\LaravelLogging\Contracts\DomainLogMapperRegistryInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterRegistryInterface;
 use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
@@ -62,6 +65,7 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
         $this->app->singleton(LogContextResolverInterface::class, DefaultLogContextResolver::class);
         $this->app->singleton(LogStoreInterface::class, (string) config('laravel-logging.store'));
         $this->app->singleton(LogAdapterRegistryInterface::class, LogAdapterRegistry::class);
+        $this->app->singleton(DomainLogMapperRegistryInterface::class, DomainLogMapperRegistry::class);
         $this->app->singleton(ActivityLogManagerInterface::class, ActivityLogManager::class);
         $this->app->singleton(ActivityLogManager::class, ActivityLogManager::class);
     }
@@ -73,7 +77,11 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
         ], 'laravel-logging-config');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([InstallActivityLogIndexesCommand::class]);
+            $this->commands([
+                ExportActivityLogsCommand::class,
+                InstallActivityLogIndexesCommand::class,
+                PruneActivityLogsCommand::class,
+            ]);
         }
 
         /** @var LogAdapterRegistryInterface $registry */
@@ -84,6 +92,16 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
 
         foreach ($adapters as $name => $adapter) {
             $registry->replace($name, $adapter);
+        }
+
+        /** @var DomainLogMapperRegistryInterface $mapperRegistry */
+        $mapperRegistry = $this->app->make(DomainLogMapperRegistryInterface::class);
+
+        /** @var array<int|string, string|callable> $mappers */
+        $mappers = config('laravel-logging.domain_mappers', []);
+
+        foreach ($mappers as $mapper) {
+            $mapperRegistry->register($mapper);
         }
     }
 }

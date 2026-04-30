@@ -14,6 +14,7 @@ use JOOservices\LaravelLogging\Exceptions\AdapterNotRegisteredException;
 use JOOservices\LaravelLogging\Exceptions\InvalidLogAdapterException;
 use JOOservices\LaravelLogging\Exceptions\InvalidLogDataException;
 use JOOservices\LaravelLogging\LogAdapterRegistry;
+use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
 use JOOservices\LaravelLogging\Tests\TestCase;
 use stdClass;
 
@@ -69,7 +70,7 @@ final class RegistryManagerTest extends TestCase
         $this->useFakeStore();
         /** @var LogAdapterRegistryInterface $registry */
         $registry = $this->app->make(LogAdapterRegistryInterface::class);
-        $manager = new ActivityLogManager($registry);
+        $manager = new ActivityLogManager($registry, $this->app->make(ActivityLogRepository::class));
 
         $this->assertInstanceOf(LogAdapterInterface::class, $manager->activity());
 

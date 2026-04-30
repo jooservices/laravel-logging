@@ -62,6 +62,10 @@ interface LogAdapterInterface
 
     public function traceId(?string $traceId): static;
 
+    public function batchId(string|int $batchId): static;
+
+    public function workflowId(string|int $workflowId): static;
+
     public function occurredAt(DateTimeInterface|string|null $occurredAt): static;
 
     public function sync(): static;
