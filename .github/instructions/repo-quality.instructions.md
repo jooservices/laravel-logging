@@ -14,7 +14,9 @@
 - Do not implement `ActivityLog::fake()` or fake/assertion helpers.
 - Tests must use full-flow MongoDB persistence and must not mock internal package services.
 - Pint wins over PHPCS/php-cs-fixer style disagreements.
+- Keep JSON, YAML, Markdown, and PHP files readable; do not leave collapsed one-line files.
+- Use `master` for production releases and `develop` for integration; do not use `main`.
 - Update docs and AI guidance when code, config, tooling, workflow, architecture, or behavior changes.
-- Run `composer validate --strict`, `composer run lint:fix`, `composer run lint:all`, `composer run test`, `composer run check`, `composer audit`, and `composer run ci` before commit.
+- Run `composer validate --strict`, `composer run lint:fix`, `composer run lint:all`, `composer run test`, `composer run test:coverage`, `composer run check`, `composer audit`, and `composer run ci` before commit.
 - Install and verify CaptainHook locally; never bypass hooks with `--no-verify`.
 - Commit only after checks pass, use author `Viet Vu <jooservices@gmail.com>`, and leave the working tree clean.

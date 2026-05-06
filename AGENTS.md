@@ -16,6 +16,7 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 - Branch all normal feature, chore, docs, and refactor work from `develop`, and target normal pull requests back to `develop`.
 - Do not use `main` as a long-lived branch. If `main` appears, report it instead of deleting it silently.
 - Release tags come from `master`; direct work on `master` is limited to approved hotfixes.
+- Hotfix branches start from `master`, target `master`, and must be merged back to both `master` and `develop`.
 
 ## Package rules
 
@@ -51,11 +52,18 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 
 - Pint is the master formatter. Tune PHPCS/php-cs-fixer around Pint, not the reverse.
 - `composer run format:sanity` checks for suspiciously collapsed source, config, docs, workflow, and AI guidance files.
+- `composer run check` is the local normal gate: lint plus the normal test suite.
+- `composer run ci` is the CI/coverage gate: lint plus coverage tests.
 - Before commit, run `composer validate --strict`, `composer run lint:fix`, `composer run lint:all`, `composer run test`, and `composer run check`.
-- Also run `composer audit` and `composer run ci` when configured and environment support is available.
+- Also run `composer run test:coverage`, `composer audit`, and `composer run ci` when configured and environment support is available.
 - Install and verify CaptainHook locally with `composer run post-install-cmd`; do not bypass hooks with `--no-verify`.
 - Fix all warnings, notices, and errors. Do not commit when checks fail.
 - Run `git diff --check` as part of the local gate.
 - If code, config, tooling, workflow, architecture, or user-facing behavior changes, update relevant docs before commit.
 - If contributor workflow, package rules, commands, or architecture guidance changes, update `AGENTS.md` and `.github/skills` before commit.
-- After successful work, commit local changes with author `Viet Vu <jooservices@gmail.com>` and leave the working tree clean.
+- After successful work, commit local changes with the configured author and leave the working tree clean.
+
+Commit author:
+
+- name: Viet Vu
+- email: jooservices@gmail.com

@@ -13,3 +13,4 @@
 - [Testing And Linting](02-development/02-testing-and-linting.md)
 - [AI Contributor Workflow](02-development/03-ai-contributor-workflow.md)
 - [Risks, Gaps, And Changelog](02-development/04-risks-gaps-and-changelog.md)
+- [Risks, Legacy, And Gaps Roadmap](11-risks-legacy-and-gaps.md)

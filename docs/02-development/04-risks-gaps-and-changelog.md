@@ -14,6 +14,9 @@
 - `ActivityLogRepository` is internal and not a supported public extension point in v1.
 - Laravel 13 support is blocked until `jooservices/laravel-repository` publishes
   compatible Illuminate constraints; version 1.1.0 requires Illuminate 12.
+- CI now runs the coverage path through `composer run ci`, but a hard coverage
+  threshold is deferred until coverage reaches at least 90%. Current measured
+  statement coverage is 82.09%.
 - Indexes are created by `php artisan activity-log:indexes`; normal requests do
   not create indexes.
 - `php artisan activity-log:doctor` reports runtime readiness and can verify

@@ -13,3 +13,7 @@ globs:
 - Runtime operations are command-based: `activity-log:indexes`,
   `activity-log:doctor`, `activity-log:prune`, and `activity-log:export`.
 - Sanitization must run before payload limiting for persisted payload fields.
+- `composer run check` is the normal local gate; `composer run ci` is the
+  coverage gate.
+- Keep JSON, YAML, Markdown, and PHP files readable and multi-line.
+- Use `master` and `develop` as the only long-lived branches; do not use `main`.
