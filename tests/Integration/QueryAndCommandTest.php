@@ -6,6 +6,7 @@ namespace JOOservices\LaravelLogging\Tests\Integration;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
 use JOOservices\LaravelLogging\Facades\ActivityLog;
 use JOOservices\LaravelLogging\Tests\Stubs\TestModel;
 use JOOservices\LaravelLogging\Tests\TestCase;
@@ -100,19 +101,57 @@ final class QueryAndCommandTest extends TestCase
 
         $this->assertSame(2, DB::connection('mongodb')->getCollection('activity_logs')->countDocuments());
 
-        $this->artisan('activity-log:prune', ['--type' => 'activity', '--days' => 90])
+        $this->artisan('activity-log:prune', ['--type' => 'activity', '--days' => 90, '--force' => true])
             ->assertSuccessful();
 
         $this->assertSame(1, DB::connection('mongodb')->getCollection('activity_logs')->countDocuments());
         $this->assertNotNull(ActivityLog::query()->action('recent')->first());
     }
 
-    public function test_prune_requires_force_in_production(): void
+    public function test_prune_defaults_to_dry_run_without_force(): void
     {
-        $this->app->detectEnvironment(fn (): string => 'production');
+        ActivityLog::activity()
+            ->action('old.default')
+            ->occurredAt(CarbonImmutable::now('UTC')->subDays(120))
+            ->save();
 
         $this->artisan('activity-log:prune', ['--type' => 'activity', '--days' => 90])
-            ->assertFailed();
+            ->expectsOutputToContain('Mode: dry-run')
+            ->assertSuccessful();
+
+        $this->assertSame(1, DB::connection('mongodb')->getCollection('activity_logs')->countDocuments());
+    }
+
+    public function test_prune_type_filter_and_before_cutoff(): void
+    {
+        ActivityLog::system()
+            ->action('system.old')
+            ->occurredAt(CarbonImmutable::parse('2026-01-01 00:00:00', 'UTC'))
+            ->save();
+
+        ActivityLog::audit()
+            ->action('audit.old')
+            ->occurredAt(CarbonImmutable::parse('2026-01-01 00:00:00', 'UTC'))
+            ->save();
+
+        $this->artisan('activity-log:prune', ['--type' => 'system', '--before' => '2026-02-01', '--force' => true, '--json' => true])
+            ->expectsOutputToContain('"deleted": 1')
+            ->assertSuccessful();
+
+        $this->assertNull(ActivityLog::query()->action('system.old')->first());
+        $this->assertNotNull(ActivityLog::query()->action('audit.old')->first());
+    }
+
+    public function test_prune_rejects_conflicting_and_invalid_options(): void
+    {
+        $this->artisan('activity-log:prune', ['--days' => 30, '--before' => '2026-01-01'])
+            ->assertExitCode(2);
+
+        $this->artisan('activity-log:prune', ['--type' => 'unknown', '--dry-run' => true])
+            ->assertExitCode(2);
+
+        $this->artisan('activity-log:prune', ['--before' => '2999-01-01', '--force' => true])
+            ->assertExitCode(2);
     }
 
     public function test_export_jsonl_and_csv(): void
@@ -145,9 +184,52 @@ final class QueryAndCommandTest extends TestCase
         ])->assertSuccessful();
 
         $this->assertFileExists($csv);
-        $this->assertStringStartsWith('uuid,type,adapter,level,action', (string) file($csv)[0]);
+        $this->assertStringStartsWith('uuid,type,action,description,level', (string) file($csv)[0]);
 
         @unlink($jsonl);
         @unlink($csv);
+    }
+
+    public function test_export_refuses_overwrite_without_force_and_allows_force(): void
+    {
+        ActivityLog::audit()->action('export.force')->save();
+
+        $path = sys_get_temp_dir().'/activity-log-export-force.jsonl';
+        file_put_contents($path, 'existing');
+
+        $this->artisan('activity-log:export', ['--output' => $path])
+            ->assertExitCode(2);
+
+        $this->artisan('activity-log:export', ['--output' => $path, '--force' => true, '--json' => true])
+            ->expectsOutputToContain('"exported": 1')
+            ->assertSuccessful();
+
+        @unlink($path);
+    }
+
+    public function test_export_rejects_invalid_format_and_output_path(): void
+    {
+        $this->artisan('activity-log:export', ['--format' => 'xml'])
+            ->assertExitCode(2);
+
+        $this->artisan('activity-log:export', ['--output' => sys_get_temp_dir().'/missing-directory/activity.jsonl'])
+            ->assertExitCode(2);
+    }
+
+    public function test_sensitive_and_oversized_values_are_not_stored_raw(): void
+    {
+        $this->app['config']->set('laravel-logging.limits.max_string_length', 5);
+        $this->app->forgetInstance(ActivityLogPayloadLimiterInterface::class);
+
+        ActivityLog::activity()
+            ->action('payload.guarded')
+            ->properties(['Password' => 'secret', 'description' => 'abcdefghij'])
+            ->save();
+
+        $record = ActivityLog::query()->action('payload.guarded')->first();
+
+        $this->assertNotNull($record);
+        $this->assertSame('[redacted]', $record->properties['Password']);
+        $this->assertSame('abcde[truncated]', $record->properties['description']);
     }
 }

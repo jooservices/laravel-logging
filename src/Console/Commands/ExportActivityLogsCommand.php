@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace JOOservices\LaravelLogging\Console\Commands;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
-use JOOservices\LaravelLogging\ActivityLogManager;
-use JOOservices\LaravelLogging\ActivityLogQuery;
+use Illuminate\Database\Eloquent\Builder;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
+use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
+use Throwable;
 
 final class ExportActivityLogsCommand extends Command
 {
@@ -15,25 +17,28 @@ final class ExportActivityLogsCommand extends Command
         {--type= : Filter by type}
         {--action= : Filter by action}
         {--from= : Include logs from this occurred_at date}
-        {--to= : Include logs until this occurred_at date}
+        {--to= : Exclude logs at or after this occurred_at date}
         {--format=jsonl : Export format: jsonl or csv}
-        {--output= : Output file path. Writes to stdout when omitted}';
+        {--output= : Output file path. Writes to stdout when omitted}
+        {--chunk= : Stream chunk size}
+        {--force : Overwrite an existing output file}
+        {--json : Output machine-readable summary when exporting to a file}';
 
     protected $description = 'Export activity logs as JSONL or CSV.';
 
-    public function handle(ActivityLogManager $manager): int
+    public function handle(ActivityLogRepository $repository): int
     {
-        $format = (string) $this->option('format');
+        $inputError = $this->validateOptions();
 
-        if (! in_array($format, ['jsonl', 'csv'], true)) {
-            $this->error('Invalid format. Supported formats: jsonl, csv.');
+        if ($inputError !== null) {
+            $this->error($inputError);
 
-            return self::FAILURE;
+            return 2;
         }
 
-        $query = $this->filteredQuery($manager);
-        $output = $this->option('output');
-        $handle = $output ? fopen((string) $output, 'wb') : STDOUT;
+        $format = (string) $this->option('format');
+        $output = $this->filledOption('output') ? (string) $this->option('output') : null;
+        $handle = $output === null ? STDOUT : fopen($output, 'wb');
 
         if (! is_resource($handle)) {
             $this->error('Unable to open export output path.');
@@ -41,53 +46,141 @@ final class ExportActivityLogsCommand extends Command
             return self::FAILURE;
         }
 
-        $this->writeExport($query, $format, $handle);
+        $count = $this->writeExport($this->filteredQuery($repository), $format, $handle);
 
-        if ($output) {
+        if ($output !== null) {
             fclose($handle);
-            $this->info("Activity logs exported to {$output}.");
+            $summary = ['format' => $format, 'output' => $output, 'exported' => $count];
+
+            $this->option('json')
+                ? $this->line((string) json_encode($summary, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR))
+                : $this->info("Exported {$count} activity logs to {$output}.");
         }
 
         return self::SUCCESS;
     }
 
-    private function filteredQuery(ActivityLogManager $manager): ActivityLogQuery
+    private function validateOptions(): ?string
     {
-        $query = $manager->query();
-
-        if ($this->option('type')) {
-            $query->type((string) $this->option('type'));
+        foreach ([$this->validateFormat(), $this->validateSummaryOutput(), $this->validateChunk(), $this->validateDates(), $this->validateOutputPath()] as $error) {
+            if ($error !== null) {
+                return $error;
+            }
         }
 
-        if ($this->option('action')) {
-            $query->action((string) $this->option('action'));
+        return null;
+    }
+
+    private function validateFormat(): ?string
+    {
+        $formats = config('laravel-logging.export.formats', ['jsonl', 'csv']);
+
+        return is_array($formats) && in_array((string) $this->option('format'), $formats, true)
+            ? null
+            : 'Invalid format. Supported formats: jsonl, csv.';
+    }
+
+    private function validateSummaryOutput(): ?string
+    {
+        return $this->option('json') && ! $this->filledOption('output')
+            ? 'Option --json requires --output to avoid mixing summary JSON with exported data on stdout.'
+            : null;
+    }
+
+    private function validateChunk(): ?string
+    {
+        return $this->filledOption('chunk') && filter_var($this->option('chunk'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false
+            ? 'Option --chunk must be a positive integer.'
+            : null;
+    }
+
+    private function validateDates(): ?string
+    {
+        foreach (['from', 'to'] as $option) {
+            if (! $this->filledOption($option)) {
+                continue;
+            }
+
+            try {
+                CarbonImmutable::parse((string) $this->option($option));
+            } catch (Throwable) {
+                return "Option --{$option} must be a valid date or datetime.";
+            }
         }
 
-        if ($this->option('from')) {
-            $query->since((string) $this->option('from'));
+        return null;
+    }
+
+    private function validateOutputPath(): ?string
+    {
+        if (! $this->filledOption('output')) {
+            return null;
         }
 
-        if ($this->option('to')) {
-            $query->until((string) $this->option('to'));
+        $path = (string) $this->option('output');
+        $directory = dirname($path);
+
+        if (! is_dir($directory) || ! is_writable($directory)) {
+            return 'Output directory does not exist or is not writable.';
         }
 
-        return $query;
+        if (file_exists($path) && ! $this->option('force')) {
+            return 'Output file already exists. Use --force to overwrite it.';
+        }
+
+        return null;
     }
 
     /**
-     * @param  resource  $handle
+     * @return Builder<ActivityLogRecord>
      */
-    private function writeExport(ActivityLogQuery $query, string $format, mixed $handle): void
+    private function filteredQuery(ActivityLogRepository $repository): Builder
     {
-        if ($format === 'csv') {
-            fputcsv($handle, ['uuid', 'type', 'adapter', 'level', 'action', 'actor_type', 'actor_id', 'subject_type', 'subject_id', 'occurred_at', 'created_at']);
+        /** @var Builder<ActivityLogRecord> $query */
+        $query = $repository->newQuery();
+
+        if ($this->filledOption('type')) {
+            $query->where('type', (string) $this->option('type'));
         }
 
-        $query->latest()->each(function (ActivityLogRecord $record) use ($format, $handle): void {
-            $format === 'jsonl'
-                ? $this->writeJsonLine($handle, $record)
-                : $this->writeCsvRow($handle, $record);
+        if ($this->filledOption('action')) {
+            $query->where('action', (string) $this->option('action'));
+        }
+
+        if ($this->filledOption('from')) {
+            $query->where('occurred_at', '>=', CarbonImmutable::parse((string) $this->option('from')));
+        }
+
+        if ($this->filledOption('to')) {
+            $query->where('occurred_at', '<', CarbonImmutable::parse((string) $this->option('to')));
+        }
+
+        return $query->oldest('occurred_at');
+    }
+
+    /**
+     * @param  Builder<ActivityLogRecord>  $query
+     * @param  resource  $handle
+     */
+    private function writeExport(Builder $query, string $format, mixed $handle): int
+    {
+        if ($format === 'csv') {
+            fputcsv($handle, ['uuid', 'type', 'action', 'description', 'level', 'actor_type', 'actor_id', 'subject_type', 'subject_id', 'causer_type', 'causer_id', 'request_id', 'correlation_id', 'trace_id', 'occurred_at', 'created_at']);
+        }
+
+        $count = 0;
+
+        $query->chunk($this->chunkSize(), function ($records) use ($format, $handle, &$count): void {
+            foreach ($records as $record) {
+                $format === 'jsonl'
+                    ? $this->writeJsonLine($handle, $record)
+                    : $this->writeCsvRow($handle, $record);
+
+                $count++;
+            }
         });
+
+        return $count;
     }
 
     /**
@@ -106,15 +199,34 @@ final class ExportActivityLogsCommand extends Command
         fputcsv($handle, [
             $record->uuid,
             $record->type,
-            $record->adapter,
-            $record->level,
             $record->action,
+            $record->message,
+            $record->level,
             $record->actor_type,
             $record->actor_id,
             $record->subject_type,
             $record->subject_id,
+            $record->causer_type,
+            $record->causer_id,
+            $record->request_id,
+            $record->correlation_id,
+            $record->trace_id,
             (string) $record->occurred_at,
             (string) $record->created_at,
         ]);
+    }
+
+    private function chunkSize(): int
+    {
+        return $this->filledOption('chunk')
+            ? (int) $this->option('chunk')
+            : (int) config('laravel-logging.export.chunk_size', 500);
+    }
+
+    private function filledOption(string $option): bool
+    {
+        $value = $this->option($option);
+
+        return $value !== null && $value !== '';
     }
 }

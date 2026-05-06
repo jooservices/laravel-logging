@@ -6,7 +6,7 @@ Run the local gate before committing:
 
 ```bash
 git diff --check
-composer validate
+composer validate --strict
 composer run lint:fix
 composer run lint:all
 composer run test

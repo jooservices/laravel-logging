@@ -22,11 +22,13 @@ php artisan activity-log:indexes
 php artisan activity-log:doctor
 ```
 
-Use the doctor command to validate config loading, container bindings, adapter
-resolution, queue readability, and MongoDB reachability:
+Use the doctor command to validate config loading, MongoDB reachability,
+container bindings, adapter resolution, retention/export config, sanitization,
+payload limits, and command registration. It does not mutate data.
 
 ```bash
 php artisan activity-log:doctor --json
+php artisan activity-log:doctor --check-indexes
 ```
 
 The default MongoDB collection is `activity_logs`.
@@ -164,16 +166,24 @@ Prune old records with configured per-type retention:
 
 ```bash
 php artisan activity-log:prune --dry-run
+php artisan activity-log:prune --force
 php artisan activity-log:prune --type=system --days=30 --force
+php artisan activity-log:prune --type=audit --before=2026-01-01 --force
 ```
+
+Without `--force`, prune runs as a dry-run. `--days` and `--before` are mutually
+exclusive, cutoffs use `occurred_at`, and future cutoffs are rejected.
 
 Export audit or security records as JSONL or CSV:
 
 ```bash
 php artisan activity-log:export --type=audit --from=2026-01-01 --format=jsonl --output=storage/app/audit.jsonl
+php artisan activity-log:export --format=csv --output=storage/app/activity-logs.csv
 ```
 
-JSONL includes the full stored document array. CSV exports core top-level fields.
+JSONL includes the full stored document array. CSV exports stable top-level
+fields only. Export streams records and refuses to overwrite existing files
+unless `--force` is passed.
 
 ## Model Audit Logging
 
@@ -211,9 +221,50 @@ ActivityLog::domain()
     ->save();
 ```
 
-## Sanitization
+## Sanitization And Payload Limits
 
-Sensitive keys are recursively redacted in `properties`, `context`, and `changes` using exact key matching. Defaults include `password`, `token`, `secret`, `api_key`, `authorization`, and `cookie`.
+Sensitive keys are recursively redacted in `properties`, `context`, and
+`changes` before payload limits are applied. Matching is exact and
+case-insensitive by default. Defaults include `password`, `token`,
+`access_token`, `refresh_token`, `secret`, `api_key`, `authorization`,
+`cookie`, and `x-api-key`.
+
+Payload limits truncate oversized strings, long arrays, deep nested payloads,
+and oversized approximate documents before MongoDB persistence.
+
+```php
+'retention' => [
+    'enabled' => true,
+    'default_days' => 180,
+    'chunk_size' => 500,
+    'types' => [
+        'activity' => 90,
+        'audit' => 365,
+        'security' => 365,
+        'domain' => 90,
+        'system' => 30,
+    ],
+],
+'export' => [
+    'chunk_size' => 500,
+    'formats' => ['jsonl', 'csv'],
+],
+'sanitization' => [
+    'enabled' => true,
+    'case_sensitive' => false,
+    'redacted_value' => '[redacted]',
+    'sensitive_keys' => ['password', 'token', 'authorization', 'cookie'],
+    'sensitive_patterns' => [],
+],
+'limits' => [
+    'enabled' => true,
+    'max_string_length' => 5000,
+    'max_array_items' => 200,
+    'max_depth' => 8,
+    'max_document_bytes' => 524288,
+    'truncate_marker' => '[truncated]',
+],
+```
 
 ## MongoDB Schema
 
@@ -234,10 +285,11 @@ Core fields:
 ## Development
 
 ```bash
-composer validate
+composer validate --strict
 composer run lint:fix
 composer run lint:all
 composer run test
+composer run test:coverage
 composer run check
 composer audit
 composer run ci

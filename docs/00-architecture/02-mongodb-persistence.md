@@ -29,6 +29,7 @@ Run the index command after installation:
 ```bash
 php artisan activity-log:indexes
 php artisan activity-log:doctor
+php artisan activity-log:doctor --check-indexes
 ```
 
 The command creates top-level indexes for classification, actor, subject,

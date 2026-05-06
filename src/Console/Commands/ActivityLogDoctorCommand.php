@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace JOOservices\LaravelLogging\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use JOOservices\LaravelLogging\ActivityLogManager;
+use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterRegistryInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
@@ -14,10 +17,14 @@ use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
 use MongoDB\Laravel\Connection;
 use Throwable;
 
+/**
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
 final class ActivityLogDoctorCommand extends Command
 {
     protected $signature = 'activity-log:doctor
         {--json : Output machine-readable JSON}
+        {--check-indexes : Verify expected MongoDB indexes exist}
         {--strict : Treat warnings as failures}';
 
     protected $description = 'Inspect activity log configuration, bindings, adapters, and MongoDB readiness.';
@@ -30,9 +37,11 @@ final class ActivityLogDoctorCommand extends Command
             $this->checkModel(),
             $this->checkRepository(),
             $this->checkStore(),
+            $this->checkManager(),
             ...$this->checkAdapters(),
             $this->checkSanitizerConfig(),
-            $this->checkQueueConfig(),
+            $this->checkPayloadLimitConfig(),
+            $this->checkRetentionConfig(),
             $this->checkIndexesStatus(),
         ];
 
@@ -49,17 +58,17 @@ final class ActivityLogDoctorCommand extends Command
         $config = config('laravel-logging');
 
         if (! is_array($config)) {
-            return $this->failedResult('config', 'laravel-logging config is not loaded as an array.');
+            return $this->failedResult('config.loaded', 'laravel-logging config is not loaded as an array.');
         }
 
         $connection = config('laravel-logging.connection');
         $collection = config('laravel-logging.collection');
 
         if (! is_string($connection) || $connection === '' || ! is_string($collection) || $collection === '') {
-            return $this->failedResult('config', 'Connection and collection must be non-empty strings.');
+            return $this->failedResult('config.storage', 'Connection and collection must be non-empty strings.');
         }
 
-        return $this->passedResult('config', "Loaded [{$connection}.{$collection}] activity log config.");
+        return $this->passedResult('config.loaded', "Loaded [{$connection}.{$collection}] activity log config.");
     }
 
     /**
@@ -74,14 +83,14 @@ final class ActivityLogDoctorCommand extends Command
             $connection = DB::connection($connectionName);
 
             if (! $connection instanceof Connection) {
-                return $this->failedResult('mongodb', "Configured connection [{$connectionName}] is not a MongoDB Laravel connection.");
+                return $this->failedResult('mongodb.connection', "Configured connection [{$connectionName}] is not a MongoDB Laravel connection.");
             }
 
             $connection->getCollection($collectionName)->countDocuments([], ['limit' => 1]);
 
-            return $this->passedResult('mongodb', "MongoDB collection [{$connectionName}.{$collectionName}] is reachable.");
+            return $this->passedResult('mongodb.connection', "MongoDB collection [{$connectionName}.{$collectionName}] is reachable.");
         } catch (Throwable $exception) {
-            return $this->warningResult('mongodb', 'MongoDB reachability check failed: '.$exception->getMessage());
+            return $this->failedResult('mongodb.connection', 'MongoDB reachability check failed: '.$exception->getMessage());
         }
     }
 
@@ -140,6 +149,24 @@ final class ActivityLogDoctorCommand extends Command
     }
 
     /**
+     * @return array{name: string, status: string, message: string}
+     */
+    private function checkManager(): array
+    {
+        try {
+            $manager = $this->laravel->make(ActivityLogManager::class);
+
+            if (! $manager instanceof ActivityLogManager) {
+                return $this->failedResult('manager', 'ActivityLogManager binding resolved an invalid manager instance.');
+            }
+
+            return $this->passedResult('manager', 'Resolved '.get_class($manager).'.');
+        } catch (Throwable $exception) {
+            return $this->failedResult('manager', $exception->getMessage());
+        }
+    }
+
+    /**
      * @return list<array{name: string, status: string, message: string}>
      */
     private function checkAdapters(): array
@@ -182,8 +209,9 @@ final class ActivityLogDoctorCommand extends Command
      */
     private function checkSanitizerConfig(): array
     {
-        $keys = config('laravel-logging.sanitize.keys');
-        $replacement = config('laravel-logging.sanitize.replacement');
+        $keys = config('laravel-logging.sanitization.sensitive_keys', config('laravel-logging.sanitize.keys'));
+        $replacement = config('laravel-logging.sanitization.redacted_value', config('laravel-logging.sanitize.replacement'));
+        $patterns = config('laravel-logging.sanitization.sensitive_patterns', []);
 
         if (! is_array($keys)) {
             return $this->failedResult('sanitize', 'Sanitizer keys must be configured as an array of strings.');
@@ -199,21 +227,62 @@ final class ActivityLogDoctorCommand extends Command
             return $this->failedResult('sanitize', 'Sanitizer replacement must be a non-empty string.');
         }
 
+        if (! is_array($patterns)) {
+            return $this->failedResult('sanitize', 'Sensitive patterns must be an array.');
+        }
+
         return $this->passedResult('sanitize', 'Sanitizer config is valid.');
     }
 
     /**
      * @return array{name: string, status: string, message: string}
      */
-    private function checkQueueConfig(): array
+    private function checkPayloadLimitConfig(): array
     {
-        $default = config('queue.default');
+        try {
+            $limiter = $this->laravel->make(ActivityLogPayloadLimiterInterface::class);
 
-        if (! is_string($default) || $default === '') {
-            return $this->warningResult('queue', 'Queue default driver is not configured.');
+            if (! $limiter instanceof ActivityLogPayloadLimiterInterface) {
+                return $this->failedResult('limits', 'Payload limiter binding resolved an invalid limiter instance.');
+            }
+        } catch (Throwable $exception) {
+            return $this->failedResult('limits', $exception->getMessage());
         }
 
-        return $this->passedResult('queue', "Queue default driver is [{$default}].");
+        foreach (['max_string_length', 'max_array_items', 'max_depth', 'max_document_bytes'] as $key) {
+            $value = config("laravel-logging.limits.{$key}");
+
+            if (! is_int($value) || $value < 1) {
+                return $this->failedResult('limits', "Payload limit [{$key}] must be a positive integer.");
+            }
+        }
+
+        return $this->passedResult('limits', 'Payload limit config is valid.');
+    }
+
+    /**
+     * @return array{name: string, status: string, message: string}
+     */
+    private function checkRetentionConfig(): array
+    {
+        $types = config('laravel-logging.retention.types', config('laravel-logging.retention.defaults', []));
+        $chunk = config('laravel-logging.retention.chunk_size');
+
+        if (! is_array($types)) {
+            return $this->failedResult('retention', 'Retention types must be an array.');
+        }
+
+        foreach ($types as $type => $days) {
+            if (! is_string($type) || ! is_int($days) || $days < 1) {
+                return $this->failedResult('retention', 'Retention type rules must map string types to positive integer days.');
+            }
+        }
+
+        if (! is_int($chunk) || $chunk < 1) {
+            return $this->failedResult('retention', 'Retention chunk size must be a positive integer.');
+        }
+
+        return $this->passedResult('retention', 'Retention config is valid.');
     }
 
     /**
@@ -221,10 +290,14 @@ final class ActivityLogDoctorCommand extends Command
      */
     private function checkIndexesStatus(): array
     {
-        $command = $this->getApplication()?->has('activity-log:indexes') === true;
+        $command = Artisan::all()['activity-log:indexes'] ?? null;
 
         if (! $command) {
             return $this->failedResult('indexes', 'activity-log:indexes command is not registered.');
+        }
+
+        if (! $this->option('check-indexes')) {
+            return $this->passedResult('indexes', 'activity-log:indexes command is registered.');
         }
 
         $connectionName = (string) config('laravel-logging.connection', 'mongodb');
@@ -237,9 +310,21 @@ final class ActivityLogDoctorCommand extends Command
                 return $this->failedResult('indexes', "Configured connection [{$connectionName}] is not a MongoDB Laravel connection.");
             }
 
-            $count = iterator_count($connection->getCollection($collectionName)->listIndexes());
+            $indexes = iterator_to_array($connection->getCollection($collectionName)->listIndexes());
+            $existing = array_map(static fn (mixed $index): array => $index->getKey(), $indexes);
+            $missing = [];
 
-            return $this->passedResult('indexes', "Index command is registered; collection currently reports {$count} indexes.");
+            foreach (InstallActivityLogIndexesCommand::expectedIndexes() as $index) {
+                if (! in_array($index['keys'], $existing, true)) {
+                    $missing[] = json_encode($index['keys'], JSON_THROW_ON_ERROR);
+                }
+            }
+
+            if ($missing !== []) {
+                return $this->warningResult('indexes', 'Missing expected indexes: '.implode(', ', $missing).'. Run php artisan activity-log:indexes.');
+            }
+
+            return $this->passedResult('indexes', 'All expected activity log indexes are present.');
         } catch (Throwable $exception) {
             return $this->warningResult('indexes', 'Index status check could not inspect the collection: '.$exception->getMessage());
         }
@@ -251,7 +336,10 @@ final class ActivityLogDoctorCommand extends Command
     private function renderChecks(array $checks): void
     {
         if ($this->option('json')) {
-            $this->line((string) json_encode(['checks' => $checks], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+            $this->line((string) json_encode([
+                'status' => $this->summaryStatus($checks),
+                'checks' => $checks,
+            ], JSON_THROW_ON_ERROR));
 
             return;
         }
@@ -281,6 +369,24 @@ final class ActivityLogDoctorCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * @param  list<array{name: string, status: string, message: string}>  $checks
+     */
+    private function summaryStatus(array $checks): string
+    {
+        $statuses = array_column($checks, 'status');
+
+        if (in_array('fail', $statuses, true)) {
+            return 'fail';
+        }
+
+        if (in_array('warn', $statuses, true)) {
+            return 'warn';
+        }
+
+        return 'pass';
     }
 
     /**

@@ -5,12 +5,18 @@
 - MongoDB is the only v1 storage backend.
 - Queue logging is available only through `queue(...)->dispatch()`.
 - `save()` remains synchronous by design.
-- Retention is command-based and prunes by `occurred_at`.
+- Retention is command-based and prunes by `occurred_at`; prune defaults to
+  dry-run unless `--force` is used.
+- Export is command-based, streams JSONL/CSV, and refuses to overwrite files
+  unless `--force` is used.
+- Sanitization runs before payload limiting for `properties`, `context`, and
+  `changes`.
 - `ActivityLogRepository` is internal and not a supported public extension point in v1.
 - Indexes are created by `php artisan activity-log:indexes`; normal requests do
   not create indexes.
-- `php artisan activity-log:doctor` reports runtime readiness, but it does not
-  repair configuration or connectivity problems automatically.
+- `php artisan activity-log:doctor` reports runtime readiness and can verify
+  expected indexes with `--check-indexes`, but it does not repair configuration
+  or connectivity problems automatically.
 - Nested `properties`, `context`, and `changes` keys are not indexed in v1.
 - Model audit logging is opt-in only through `LogsActivity`.
 - The package does not provide SQL storage, a UI dashboard, global automatic
@@ -32,3 +38,5 @@
   workflow, and AI guidance files.
 - Added query, prune, export, batch/workflow, opt-in model audit, and domain
   mapper APIs.
+- Added production-operation hardening for doctor, prune, export, recursive
+  sanitization, and payload limiting.

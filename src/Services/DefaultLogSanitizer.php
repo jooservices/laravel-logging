@@ -10,14 +10,22 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
 {
     /**
      * @param  array<int, string>  $keys
+     * @param  array<int, string>  $patterns
      */
     public function __construct(
         private readonly array $keys,
         private readonly string $replacement,
+        private readonly bool $enabled = true,
+        private readonly bool $caseSensitive = false,
+        private readonly array $patterns = [],
     ) {}
 
     public function sanitize(array $payload): array
     {
+        if ($this->enabled === false) {
+            return $payload;
+        }
+
         return $this->sanitizeArray($payload);
     }
 
@@ -27,10 +35,8 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
      */
     private function sanitizeArray(array $payload): array
     {
-        $sensitive = array_map('strtolower', $this->keys);
-
         foreach ($payload as $key => $value) {
-            if (is_string($key) && in_array(strtolower($key), $sensitive, true)) {
+            if (is_string($key) && $this->isSensitiveKey($key)) {
                 $payload[$key] = $this->replacement;
 
                 continue;
@@ -43,5 +49,26 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
         }
 
         return $payload;
+    }
+
+    private function isSensitiveKey(string $key): bool
+    {
+        foreach ($this->keys as $sensitive) {
+            if ($this->caseSensitive ? $key === $sensitive : strtolower($key) === strtolower($sensitive)) {
+                return true;
+            }
+        }
+
+        foreach ($this->patterns as $pattern) {
+            set_error_handler(static fn (): bool => true);
+            $matched = preg_match($pattern, $key) === 1;
+            restore_error_handler();
+
+            if ($matched) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

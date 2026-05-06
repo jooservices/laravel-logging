@@ -28,7 +28,7 @@ description: "Use when starting implementation, preparing commits, updating work
 Run:
 
 ```bash
-composer validate
+composer validate --strict
 composer run lint:fix
 composer run lint:all
 composer run test

@@ -12,6 +12,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
@@ -75,6 +76,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
     public function __construct(
         protected readonly LogStoreInterface $store,
         protected readonly LogSanitizerInterface $sanitizer,
+        protected readonly ActivityLogPayloadLimiterInterface $payloadLimiter,
         protected readonly LogContextResolverInterface $contextResolver,
     ) {}
 
@@ -264,9 +266,9 @@ abstract class BaseLogAdapter implements LogAdapterInterface
             throw new InvalidLogDataException('Activity log action is required before saving.');
         }
 
-        $properties = $this->sanitizer->sanitize($this->properties);
-        $context = $this->sanitizer->sanitize($this->context);
-        $changes = $this->sanitizer->sanitize($this->changes);
+        $properties = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->properties));
+        $context = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->context));
+        $changes = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->changes));
 
         return new ActivityLogData(
             uuid: (string) Str::uuid(),

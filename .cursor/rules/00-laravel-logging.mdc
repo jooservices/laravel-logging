@@ -10,3 +10,6 @@ globs:
 - DTOs should extend `JOOservices\Dto\Core\Dto` where they carry structured log data.
 - Repositories must follow `jooservices/laravel-repository` patterns.
 - `queue(...)->dispatch()` is async; `sync()->dispatch()` and `save()` are sync.
+- Runtime operations are command-based: `activity-log:indexes`,
+  `activity-log:doctor`, `activity-log:prune`, and `activity-log:export`.
+- Sanitization must run before payload limiting for persisted payload fields.

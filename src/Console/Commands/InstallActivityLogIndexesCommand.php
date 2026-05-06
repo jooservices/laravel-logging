@@ -27,7 +27,7 @@ final class InstallActivityLogIndexesCommand extends Command
 
         $collection = $database->getCollection($collectionName);
 
-        foreach ($this->indexes() as $index) {
+        foreach (self::expectedIndexes() as $index) {
             $collection->createIndex($index['keys'], $index['options']);
         }
 
@@ -39,7 +39,7 @@ final class InstallActivityLogIndexesCommand extends Command
     /**
      * @return array<int, array{keys: array<string, int>, options: array<string, mixed>}>
      */
-    private function indexes(): array
+    public static function expectedIndexes(): array
     {
         return [
             ['keys' => ['uuid' => 1], 'options' => ['unique' => true]],

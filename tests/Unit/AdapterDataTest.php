@@ -11,6 +11,7 @@ use JOOservices\LaravelLogging\Adapters\AuditLogAdapter;
 use JOOservices\LaravelLogging\Adapters\DomainLogAdapter;
 use JOOservices\LaravelLogging\Adapters\SecurityLogAdapter;
 use JOOservices\LaravelLogging\Adapters\SystemLogAdapter;
+use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
 use JOOservices\LaravelLogging\Contracts\DomainLogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\DomainLogMapperInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
@@ -30,6 +31,8 @@ final class AdapterDataTest extends TestCase
 
     private LogSanitizerInterface $sanitizer;
 
+    private ActivityLogPayloadLimiterInterface $payloadLimiter;
+
     private LogContextResolverInterface $contextResolver;
 
     protected function setUp(): void
@@ -42,6 +45,7 @@ final class AdapterDataTest extends TestCase
 
         $this->store = $this->app->make(LogStoreInterface::class);
         $this->sanitizer = $this->app->make(LogSanitizerInterface::class);
+        $this->payloadLimiter = $this->app->make(ActivityLogPayloadLimiterInterface::class);
         $this->contextResolver = $this->app->make(LogContextResolverInterface::class);
     }
 
@@ -50,7 +54,7 @@ final class AdapterDataTest extends TestCase
         $actor = new TestModel(['id' => 123]);
         $subject = new TestModel(['id' => 456]);
 
-        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('provider.disabled')
             ->by($actor)
             ->on($subject)
@@ -68,14 +72,14 @@ final class AdapterDataTest extends TestCase
         $this->assertSame('456', $record->subject_id);
         $this->assertSame('api-client', $record->causer_type);
         $this->assertSame('789', $record->causer_id);
-        $this->assertSame('[REDACTED]', $record->properties['password']);
-        $this->assertSame('[REDACTED]', $record->context['nested']['token']);
+        $this->assertSame('[redacted]', $record->properties['password']);
+        $this->assertSame('[redacted]', $record->context['nested']['token']);
         $this->assertNotNull($record->occurred_at);
     }
 
     public function test_changes_are_sanitized_recursively(): void
     {
-        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('credentials.updated')
             ->changes([
                 'password' => ['old' => 'before', 'new' => 'after'],
@@ -83,14 +87,14 @@ final class AdapterDataTest extends TestCase
             ])
             ->save();
 
-        $this->assertSame('[REDACTED]', $record->changes['password']);
-        $this->assertSame('[REDACTED]', $record->changes['profile']['token']);
+        $this->assertSame('[redacted]', $record->changes['password']);
+        $this->assertSame('[redacted]', $record->changes['profile']['token']);
         $this->assertSame('Taylor', $record->changes['profile']['name']);
     }
 
     public function test_batch_and_workflow_helpers_store_string_context_ids(): void
     {
-        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('crawler.batch.completed')
             ->context(['provider' => 'onejav'])
             ->batchId(123)
@@ -104,7 +108,7 @@ final class AdapterDataTest extends TestCase
 
     public function test_string_targets_are_not_parsed(): void
     {
-        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('checked')
             ->by('system')
             ->on('external:provider:123')
@@ -121,7 +125,7 @@ final class AdapterDataTest extends TestCase
 
     public function test_external_methods_cast_ids_to_strings(): void
     {
-        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('external')
             ->byExternal('api-client', 'crawlerx')
             ->onExternal('provider', 123)
@@ -135,7 +139,7 @@ final class AdapterDataTest extends TestCase
 
     public function test_audit_changes_from_filters_fields(): void
     {
-        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('config.updated')
             ->only(['enabled', 'count'])
             ->except(['count'])
@@ -147,7 +151,7 @@ final class AdapterDataTest extends TestCase
 
     public function test_audit_log_only_dirty_can_include_unchanged_fields(): void
     {
-        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new AuditLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('config.checked')
             ->logOnlyDirty(false)
             ->changesFrom(['enabled' => true], ['enabled' => true])
@@ -158,7 +162,7 @@ final class AdapterDataTest extends TestCase
 
     public function test_security_login_failed_sets_action_level_and_properties(): void
     {
-        $record = (new SecurityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->loginFailed('user@example.test')
             ->save();
 
@@ -172,7 +176,7 @@ final class AdapterDataTest extends TestCase
     {
         $event = new class {};
 
-        $record = (new DomainLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new DomainLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->fromEvent($event)
             ->save();
 
@@ -206,7 +210,7 @@ final class AdapterDataTest extends TestCase
             }
         });
 
-        $record = (new DomainLogAdapter($this->store, $this->sanitizer, $this->contextResolver, $registry))
+        $record = (new DomainLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver, $registry))
             ->fromEvent($event)
             ->save();
 
@@ -218,7 +222,7 @@ final class AdapterDataTest extends TestCase
 
     public function test_system_shortcuts_capture_exception_context(): void
     {
-        $record = (new SystemLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->jobFailed('ProcessJob', new RuntimeException('Nope'))
             ->save();
 
@@ -239,7 +243,7 @@ final class AdapterDataTest extends TestCase
             'REMOTE_ADDR' => '127.0.0.1',
         ]);
 
-        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('request.checked')
             ->withRequest($request)
             ->save();
@@ -255,7 +259,7 @@ final class AdapterDataTest extends TestCase
     {
         Queue::fake();
 
-        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('queued.activity')
             ->queue('logging')
             ->dispatch();
@@ -274,7 +278,7 @@ final class AdapterDataTest extends TestCase
 
         $job = null;
 
-        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('queued.persisted')
             ->queue('logging')
             ->dispatch();
@@ -298,7 +302,7 @@ final class AdapterDataTest extends TestCase
     {
         Queue::fake();
 
-        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver))
+        $record = (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('sync.activity')
             ->queue('logging')
             ->save();
@@ -311,7 +315,7 @@ final class AdapterDataTest extends TestCase
     {
         Queue::fake();
 
-        $adapter = new ActivityLogAdapter($this->store, $this->sanitizer, $this->contextResolver);
+        $adapter = new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver);
 
         $adapter
             ->action('sync.dispatch')

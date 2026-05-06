@@ -27,9 +27,11 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 - Async logging must use `queue(...)->dispatch()`, which dispatches `StoreActivityLogJob`.
 - `sync()->dispatch()` records immediately without pushing a queue job.
 - Sanitization must recursively redact exact sensitive keys in `properties`, `context`, and `changes`.
+- Sanitization runs before payload limiting; payload limits must truncate oversized strings, arrays, depth, and approximate document size before persistence.
 - Request context must not log full request payloads, cookies, or auth headers by default.
 - Query APIs must reuse logging identity semantics and avoid exposing raw MongoDB details unless required.
 - Retention is command-based in v1 and prunes by `occurred_at`.
+- Export is command-based in v1, streams JSONL/CSV, and must not overwrite files unless forced.
 - Model audit logging is opt-in only through `LogsActivity`; never add global automatic observers.
 - Domain event mapping must use the mapper registry and preserve the fallback event-class projection.
 - Do not implement `ActivityLog::fake()`.
@@ -42,7 +44,7 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 
 - Pint is the master formatter. Tune PHPCS/php-cs-fixer around Pint, not the reverse.
 - `composer run format:sanity` checks for suspiciously collapsed source, config, docs, workflow, and AI guidance files.
-- Before commit, run `composer validate`, `composer run lint:fix`, `composer run lint:all`, `composer run test`, and `composer run check`.
+- Before commit, run `composer validate --strict`, `composer run lint:fix`, `composer run lint:all`, `composer run test`, and `composer run check`.
 - Also run `composer audit` and `composer run ci` when configured and environment support is available.
 - Install and verify CaptainHook locally with `composer run post-install-cmd`; do not bypass hooks with `--no-verify`.
 - Fix all warnings, notices, and errors. Do not commit when checks fail.

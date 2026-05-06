@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace JOOservices\LaravelLogging\Adapters;
 
+use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
 use JOOservices\LaravelLogging\Contracts\DomainLogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\DomainLogMapperRegistryInterface;
 use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
@@ -22,10 +23,11 @@ final class DomainLogAdapter extends BaseLogAdapter implements DomainLogAdapterI
     public function __construct(
         LogStoreInterface $store,
         LogSanitizerInterface $sanitizer,
+        ActivityLogPayloadLimiterInterface $payloadLimiter,
         LogContextResolverInterface $contextResolver,
         private readonly ?DomainLogMapperRegistryInterface $mapperRegistry = null,
     ) {
-        parent::__construct($store, $sanitizer, $contextResolver);
+        parent::__construct($store, $sanitizer, $payloadLimiter, $contextResolver);
     }
 
     public function fromEvent(object $event): static

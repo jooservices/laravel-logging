@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace JOOservices\LaravelLogging\Tests\Unit;
 
+use Illuminate\Support\Facades\Artisan;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
 use JOOservices\LaravelLogging\Tests\Stubs\CustomActivityLogRecord;
@@ -31,5 +32,15 @@ final class ServiceProviderBindingTest extends TestCase
         $repository = $this->app->make(ActivityLogRepository::class);
 
         $this->assertInstanceOf(ActivityLogRepository::class, $repository);
+    }
+
+    public function test_activity_log_commands_are_registered(): void
+    {
+        $commands = array_keys(Artisan::all());
+
+        $this->assertContains('activity-log:indexes', $commands);
+        $this->assertContains('activity-log:doctor', $commands);
+        $this->assertContains('activity-log:prune', $commands);
+        $this->assertContains('activity-log:export', $commands);
     }
 }

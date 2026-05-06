@@ -18,7 +18,7 @@ description: "Use when adding tests, fixing quality failures, or changing compos
 ## Commands
 
 ```bash
-composer validate
+composer validate --strict
 composer run lint:fix
 composer run lint:all
 composer run test
@@ -30,7 +30,8 @@ composer run format:sanity
 
 ## Testing expectations
 
-- Unit-test adapter, registry, DTO-building, sanitization, request context, and queue dispatch behavior.
+- Unit-test adapter, registry, DTO-building, sanitization, payload limiting,
+  request context, and queue dispatch behavior.
 - Integration-test MongoDB persistence through the facade/store/repository/model flow.
 - Keep MongoDB integration tests reliable and skip clearly when MongoDB is unavailable.
 - Do not mock or fake internal package services.

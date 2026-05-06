@@ -29,7 +29,9 @@ return [
 
     'retention' => [
         'enabled' => true,
-        'defaults' => [
+        'default_days' => 180,
+        'chunk_size' => 500,
+        'types' => [
             'activity' => 90,
             'audit' => 365,
             'security' => 365,
@@ -38,16 +40,39 @@ return [
         ],
     ],
 
-    'sanitize' => [
-        'keys' => [
+    'export' => [
+        'chunk_size' => 500,
+        'formats' => ['jsonl', 'csv'],
+    ],
+
+    'sanitization' => [
+        'enabled' => true,
+        'case_sensitive' => false,
+        'redacted_value' => '[redacted]',
+        'sensitive_keys' => [
             'password',
             'password_confirmation',
             'token',
+            'access_token',
+            'refresh_token',
             'secret',
+            'client_secret',
             'api_key',
+            'apikey',
             'authorization',
             'cookie',
+            'set-cookie',
+            'x-api-key',
         ],
-        'replacement' => '[REDACTED]',
+        'sensitive_patterns' => [],
+    ],
+
+    'limits' => [
+        'enabled' => true,
+        'max_string_length' => 5000,
+        'max_array_items' => 200,
+        'max_depth' => 8,
+        'max_document_bytes' => 524288,
+        'truncate_marker' => '[truncated]',
     ],
 ];
