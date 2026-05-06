@@ -13,13 +13,16 @@ $targets = [
     '.github/workflows' => ['yml', 'yaml'],
     '.github/instructions' => ['md'],
     '.github/skills' => ['md'],
+    '.cursor/rules' => ['md', 'mdc'],
 ];
 
 $explicitFiles = [
     'README.md',
     'AGENTS.md',
+    'CLAUDE.md',
     'captainhook.json',
     'composer.json',
+    'composer.lock',
 ];
 
 $errors = [];
@@ -96,19 +99,17 @@ function checkFile(string $path, string $relative, array &$errors): void
         if (json_last_error() !== JSON_ERROR_NONE) {
             $errors[] = "{$relative} contains invalid JSON: ".json_last_error_msg().'.';
         }
-
-        return;
     }
 
     if ($extension === 'php' && str_contains($contents, "<?php\n") && $lineCount < 4) {
         $errors[] = "{$relative} looks suspiciously collapsed for a PHP file ({$lineCount} lines).";
     }
 
-    if (in_array($extension, ['md', 'yml', 'yaml'], true) && trim($contents) !== '' && $lineCount < 3) {
+    if (in_array($extension, ['json', 'md', 'mdc', 'yml', 'yaml'], true) && trim($contents) !== '' && $lineCount < 3) {
         $errors[] = "{$relative} looks suspiciously collapsed for a {$extension} file ({$lineCount} lines).";
     }
 
-    if (in_array($extension, ['php', 'md', 'yml', 'yaml'], true)) {
+    if (in_array($extension, ['json', 'php', 'md', 'mdc', 'yml', 'yaml'], true)) {
         foreach ($lines ?: [] as $number => $line) {
             if (strlen($line) > 240) {
                 $errors[] = "{$relative}:".($number + 1).' is longer than 240 characters.';
