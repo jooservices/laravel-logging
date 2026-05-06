@@ -11,6 +11,8 @@ Before non-trivial changes:
 Use `develop` as the integration branch for normal work and `master` as the
 production release branch. Do not create or depend on `main` as a long-lived
 branch; report it if it appears.
+Hotfix branches start from `master`, target `master`, and are synchronized back
+into both `master` and `develop` after merge.
 
 Any code, config, tooling, docs, workflow, architecture, or user-facing behavior
 change must update matching docs, `AGENTS.md`, and `.github/skills` before

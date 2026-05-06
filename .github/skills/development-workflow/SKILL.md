@@ -18,6 +18,7 @@ description: "Use when starting implementation, preparing commits, updating work
 
 - Keep changes minimal and package-specific.
 - Use `develop` for normal integration work and `master` for production releases; do not use `main` as a long-lived branch.
+- Start hotfix branches from `master`, target `master`, and merge completed hotfixes back to both `master` and `develop`.
 - Do not assume missing behavior or silently invent APIs.
 - Do not add `ActivityLog::fake()` or fake/assertion helpers unless the testing policy is explicitly changed.
 - Update tests with behavior changes.

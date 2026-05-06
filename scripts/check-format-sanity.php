@@ -23,6 +23,7 @@ $explicitFiles = [
     'captainhook.json',
     'composer.json',
     'composer.lock',
+    'pint.json',
 ];
 
 $errors = [];

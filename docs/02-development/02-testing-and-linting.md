@@ -2,6 +2,10 @@
 
 Pint is the primary formatter. Tune PHPCS and PHP-CS-Fixer around Pint output.
 
+`composer run check` is the local normal gate: `lint:all` plus the unit and
+integration suites. `composer run ci` is the coverage gate: `lint:all` plus
+`test:coverage`.
+
 Run the local gate before committing:
 
 ```bash
@@ -10,6 +14,7 @@ composer validate --strict
 composer run lint:fix
 composer run lint:all
 composer run test
+composer run test:coverage
 composer run check
 composer audit
 composer run ci
