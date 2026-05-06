@@ -3,6 +3,30 @@
     "description": "MongoDB-backed structured application logging for Laravel.",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "php",
+        "php85",
+        "laravel",
+        "laravel12",
+        "logging",
+        "structured-logging",
+        "activity-log",
+        "audit-log",
+        "security-log",
+        "mongodb",
+        "composer-package",
+        "jooservices"
+    ],
+    "authors": [
+        {
+            "name": "Viet Vu",
+            "email": "jooservices@gmail.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/jooservices/laravel-logging/issues",
+        "source": "https://github.com/jooservices/laravel-logging"
+    },
     "require": {
         "php": "^8.5",
         "jooservices/dto": "^1.0",

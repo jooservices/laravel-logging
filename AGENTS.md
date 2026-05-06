@@ -10,6 +10,13 @@ This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-log
 - Use `jooservices/laravel-repository` as the source of truth before changing repository construction or persistence.
 - Do not assume missing behavior. Stop and report evidence when package APIs, MongoDB Laravel behavior, or JOOservices standards conflict.
 
+## Git workflow
+
+- Use exactly two long-lived branches: `master` for production releases and `develop` for integration.
+- Branch all normal feature, chore, docs, and refactor work from `develop`, and target normal pull requests back to `develop`.
+- Do not use `main` as a long-lived branch. If `main` appears, report it instead of deleting it silently.
+- Release tags come from `master`; direct work on `master` is limited to approved hotfixes.
+
 ## Package rules
 
 - The only v1 storage backend is MongoDB collection `activity_logs`.

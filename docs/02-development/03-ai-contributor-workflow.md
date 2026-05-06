@@ -8,6 +8,10 @@ Before non-trivial changes:
 4. Compare repository and persistence decisions with `jooservices/laravel-repository`.
 5. Stop on unclear APIs, conflicting package behavior, or unsupported feature requests.
 
+Use `develop` as the integration branch for normal work and `master` as the
+production release branch. Do not create or depend on `main` as a long-lived
+branch; report it if it appears.
+
 Any code, config, tooling, docs, workflow, architecture, or user-facing behavior
 change must update matching docs, `AGENTS.md`, and `.github/skills` before
 commit.
