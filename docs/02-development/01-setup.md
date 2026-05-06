@@ -6,6 +6,8 @@ Install dependencies with Composer:
 composer install
 ```
 
+This package supports PHP 8.5 with Laravel 12.
+
 Publish configuration in Laravel applications:
 
 ```bash
