@@ -284,6 +284,9 @@ Core fields:
 
 ## Development
 
+`composer run check` is the local normal gate: lint plus the unit and
+integration test suites. `composer run ci` is the coverage gate used by CI.
+
 ```bash
 composer validate --strict
 composer run lint:fix

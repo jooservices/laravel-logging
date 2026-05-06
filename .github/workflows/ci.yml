@@ -41,9 +41,14 @@ jobs:
 
       - uses: ramsey/composer-install@v3
 
-      - run: composer validate --strict
-      - run: composer audit
-      - run: composer run check
+      - name: Validate Composer metadata
+        run: composer validate --strict
+
+      - name: Audit Composer dependencies
+        run: composer audit
+
+      - name: Run lint and coverage gate
+        run: composer run ci
         env:
           MONGODB_URI: mongodb://127.0.0.1:27017
           MONGODB_DATABASE: jooservices_logging_ci

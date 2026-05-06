@@ -28,6 +28,9 @@ Before every commit, if code/config/tooling/docs behavior changed, update the re
 - Document limitations instead of smoothing them over.
 - Queue docs must say `save()` is sync and async logging uses `queue(...)->dispatch()`.
 - Contributor docs must say to run the full gate, commit after pass, and leave a clean tree.
+- Docs must distinguish `composer run check` as the local normal gate from
+  `composer run ci` as the coverage gate.
+- Docs and AI guidance must reject collapsed JSON, YAML, Markdown, and PHP files.
 
 ## Definition of done
 
