@@ -306,4 +306,7 @@ repository, model, adapter, or DTO layers. Allowed fakes stay at Laravel
 framework boundaries such as queue dispatch, events, or temporary filesystem
 output.
 
+Release workflow and tagging expectations are documented in
+[`docs/02-development/05-release-process.md`](docs/02-development/05-release-process.md).
+
 AI contributors should follow `AGENTS.md` and the package-specific skills in `.github/skills/`. When code, config, tooling, workflow, architecture, or behavior changes, update the matching docs and AI guidance before committing.
