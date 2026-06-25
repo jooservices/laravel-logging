@@ -7,7 +7,7 @@ It is not a replacement for Laravel Log, Monolog, Sentry, OpenTelemetry, Loki, E
 ## Requirements
 
 - PHP 8.5+
-- Laravel 12
+- Laravel 12/13
 - `mongodb/laravel-mongodb`
 - `jooservices/dto`
 - `jooservices/laravel-repository`
