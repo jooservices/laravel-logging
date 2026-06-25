@@ -67,21 +67,6 @@ and observability platform replacement work.
   `--strict`, and `--check-indexes`.
 - Priority: should do.
 
-### Laravel 13 Compatibility Follow-Up
-
-- What: Revisit Laravel 13 support after `jooservices/laravel-repository`
-  publishes compatible Illuminate constraints.
-- Why: Laravel 13 is the current line, but repository 1.1.0 requires
-  Illuminate 12 components.
-- How: Update constraints, run Composer with all dependencies, and execute the
-  full MongoDB-backed test suite.
-- Benefit: Keeps the package aligned with current Laravel package conventions.
-- Risk: MongoDB Laravel or repository behavior may change across major
-  framework versions.
-- Tests required: Full `composer run ci` on Laravel 12 and Laravel 13
-  dependency sets.
-- Priority: should do.
-
 ## Optional
 
 ### Additional Built-In Domain Mapper Examples
