@@ -71,10 +71,22 @@ jobs:
       - name: Run ${{ matrix.tool.name }}
         run: composer ${{ matrix.tool.command }}
 
-  tests:
-    name: Tests & Coverage
+  tests-matrix:
+    name: Tests & Coverage (Laravel ${{ matrix.laravel }})
     runs-on: ubuntu-latest
     needs: [lint]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        laravel: ['12', '13']
+        include:
+          - laravel: '12'
+            testbench: '^10.0'
+            coverage: true
+          - laravel: '13'
+            testbench: '^11.0'
+            coverage: false
 
     services:
       mongodb:
@@ -95,14 +107,41 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          coverage: xdebug
+          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
           extensions: mongodb
 
       - name: Install Composer dependencies
         uses: ramsey/composer-install@v3
 
+      - name: Require Laravel ${{ matrix.laravel }}
+        run: |
+          composer require --no-update "laravel/framework:^${{ matrix.laravel }}.0"
+          composer require --no-update --dev "orchestra/testbench:${{ matrix.testbench }}"
+          composer update --prefer-dist --no-interaction
+
       - name: Run tests with coverage
+        if: matrix.coverage
         run: composer test:coverage
         env:
           MONGODB_URI: mongodb://127.0.0.1:27017
           MONGODB_DATABASE: jooservices_logging_ci
+
+      - name: Run tests
+        if: ${{ !matrix.coverage }}
+        run: composer test
+        env:
+          MONGODB_URI: mongodb://127.0.0.1:27017
+          MONGODB_DATABASE: jooservices_logging_ci
+
+  tests:
+    name: Tests & Coverage
+    runs-on: ubuntu-latest
+    needs: [tests-matrix]
+    if: always()
+    steps:
+      - name: Check matrix result
+        run: |
+          if [ "${{ needs.tests-matrix.result }}" != "success" ]; then
+            echo "::error::Tests & Coverage matrix did not succeed"
+            exit 1
+          fi

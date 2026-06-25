@@ -1,6 +1,6 @@
 # Repository Quality
 
-- Use PHP 8.5, Laravel 12, `mongodb/laravel-mongodb`, `jooservices/dto`, and `jooservices/laravel-repository`.
+- Use PHP 8.5, Laravel 12/13, `mongodb/laravel-mongodb`, `jooservices/dto`, and `jooservices/laravel-repository`.
 - Read `AGENTS.md` and relevant `.github/skills/*/SKILL.md` files before non-trivial changes.
 - Keep persistence flowing through `ActivityLogData` -> `MongoLogStore` -> `ActivityLogRepository` -> `ActivityLogRecord`.
 - Keep `ActivityLogRepository` constructor-injected with `ActivityLogRecord` and aligned with `jooservices/laravel-repository`.

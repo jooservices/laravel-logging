@@ -1,6 +1,6 @@
 # JOOservices Laravel Logging Agent Instructions
 
-This repository is a PHP 8.5 / Laravel 12 package named `jooservices/laravel-logging`.
+This repository is a PHP 8.5 / Laravel 12/13 package named `jooservices/laravel-logging`.
 
 ## Before coding
 
