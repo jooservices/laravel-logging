@@ -7,6 +7,7 @@ namespace JOOservices\LaravelLogging\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use JOOservices\LaravelLogging\Exceptions\LoggingConfigurationException;
+use JOOservices\LaravelLogging\Support\PromotedFieldPromoter;
 use MongoDB\Laravel\Connection;
 
 final class InstallActivityLogIndexesCommand extends Command
@@ -41,12 +42,14 @@ final class InstallActivityLogIndexesCommand extends Command
      */
     public static function expectedIndexes(): array
     {
-        return [
+        return array_merge([
             ['keys' => ['uuid' => 1], 'options' => ['unique' => true]],
             ['keys' => ['type' => 1], 'options' => []],
             ['keys' => ['adapter' => 1], 'options' => []],
             ['keys' => ['level' => 1], 'options' => []],
             ['keys' => ['action' => 1], 'options' => []],
+            ['keys' => ['tenant_id' => 1], 'options' => []],
+            ['keys' => ['tenant_id' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['actor_type' => 1, 'actor_id' => 1], 'options' => []],
             ['keys' => ['subject_type' => 1, 'subject_id' => 1], 'options' => []],
             ['keys' => ['causer_type' => 1, 'causer_id' => 1], 'options' => []],
@@ -58,6 +61,6 @@ final class InstallActivityLogIndexesCommand extends Command
             ['keys' => ['type' => 1, 'action' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['subject_type' => 1, 'subject_id' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['actor_type' => 1, 'actor_id' => 1, 'occurred_at' => -1], 'options' => []],
-        ];
+        ], PromotedFieldPromoter::indexDefinitions());
     }
 }

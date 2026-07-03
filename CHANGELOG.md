@@ -2,6 +2,29 @@
 
 All notable changes to `jooservices/laravel-logging` will be documented in this file.
 
+## [v1.2.0] - 2026-07-03
+
+### Added
+
+- **Promoted fields** — config `laravel-logging.promoted_fields` copies nested `properties`/`context` paths to top-level document fields before persist; indexes created via `activity-log:indexes`
+- **Granular retention rules** — `laravel-logging.retention.rules` match by `adapter`, `level`, and/or `action_prefix` plus `retention_days`
+- **Query helpers** — `tenantId()`, `actionPrefix()`, `latestRecord()`, `previousRecord()`, `countByAction()`, `countByLevel()`
+- **`tenant_id`** — optional top-level field on adapters via `tenantId()` with MongoDB indexes
+- **`ActivityLogStoreFailed` event** — dispatched when `StoreActivityLogJob` fails permanently
+- **Coverage gate** — CI enforces ≥90% line coverage via `scripts/check-coverage.php`
+- **Docs** — ecosystem decision tree and adapter cookbook
+
+### Changed
+
+- Default `activity-log:prune` (no `--type`/`--days`/`--before`) now runs per-type retention passes from `retention.types`, then configured `retention.rules`
+- `InstallActivityLogIndexesCommand` includes `tenant_id` and promoted-field compound indexes
+
+### Migration notes
+
+- Publish or merge config to add `promoted_fields` and `retention.rules` (both default to empty arrays)
+- Re-run `php artisan activity-log:indexes` after configuring promoted fields or enabling `tenant_id` queries at scale
+- Explicit prune flags (`--type`, `--days`, `--before`) behavior is unchanged
+
 ## [v1.1.0] - 2026-06-25
 
 ### Added

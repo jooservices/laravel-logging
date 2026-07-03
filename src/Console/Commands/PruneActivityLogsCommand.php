@@ -8,8 +8,12 @@ use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
+use JOOservices\LaravelLogging\Support\RetentionRulePlanner;
 use Throwable;
 
+/**
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
 final class PruneActivityLogsCommand extends Command
 {
     protected $signature = 'activity-log:prune
@@ -33,14 +37,32 @@ final class PruneActivityLogsCommand extends Command
             return 2;
         }
 
-        $plan = $this->plan();
+        if ($this->usesExplicitCutoff()) {
+            $plan = $this->plan();
 
-        if ($plan === null) {
+            if ($plan === null) {
+                $this->renderResult('dry-run', null, null, 0, 0);
+
+                return self::SUCCESS;
+            }
+
+            return $this->pruneSinglePlan($repository, $plan);
+        }
+
+        if ((bool) config('laravel-logging.retention.enabled', true) === false) {
             $this->renderResult('dry-run', null, null, 0, 0);
 
             return self::SUCCESS;
         }
 
+        return $this->pruneDefaultRetention($repository);
+    }
+
+    /**
+     * @param  array{0: string|null, 1: CarbonImmutable}  $plan
+     */
+    private function pruneSinglePlan(ActivityLogRepository $repository, array $plan): int
+    {
         [$type, $cutoff] = $plan;
 
         if ($cutoff->isFuture()) {
@@ -66,6 +88,114 @@ final class PruneActivityLogsCommand extends Command
         $this->renderResult($mode, $type, $cutoff, $matched, $deleted);
 
         return self::SUCCESS;
+    }
+
+    private function pruneDefaultRetention(ActivityLogRepository $repository): int
+    {
+        $mode = $this->option('force') ? 'force' : 'dry-run';
+        $totalMatched = 0;
+        $totalDeleted = 0;
+        $passes = 0;
+
+        /** @var array<string, int|string> $types */
+        $types = (array) config('laravel-logging.retention.types', []);
+
+        foreach ($types as $type => $days) {
+            $days = filter_var($days, FILTER_VALIDATE_INT);
+
+            if ($days === false || $days < 1 || ! is_string($type) || $type === '') {
+                continue;
+            }
+
+            $cutoff = CarbonImmutable::now('UTC')->subDays($days);
+            [$matched, $deleted] = $this->pruneTypeCutoff($repository, $type, $cutoff, $mode);
+            $totalMatched += $matched;
+            $totalDeleted += $deleted;
+            $passes++;
+        }
+
+        $rules = RetentionRulePlanner::rules();
+
+        foreach ($rules as $rule) {
+            [$matched, $deleted] = $this->pruneRule($repository, $rule, $mode);
+            $totalMatched += $matched;
+            $totalDeleted += $deleted;
+            $passes++;
+        }
+
+        return $this->renderAggregateResult($mode, $totalMatched, $totalDeleted, $passes);
+    }
+
+    /**
+     * @return array{0: int, 1: int}
+     */
+    private function pruneTypeCutoff(ActivityLogRepository $repository, string $type, CarbonImmutable $cutoff, string $mode): array
+    {
+        $query = $repository->newQuery()
+            ->where('occurred_at', '<', $cutoff)
+            ->where('type', $type);
+
+        $matched = (clone $query)->toBase()->count();
+        $deleted = $mode === 'force' ? $this->deleteMatchingRecords($query) : 0;
+
+        return [$matched, $deleted];
+    }
+
+    /**
+     * @param  array{
+     *     adapter: string|null,
+     *     level: string|null,
+     *     action_prefix: string|null,
+     *     cutoff: CarbonImmutable
+     * }  $rule
+     * @return array{0: int, 1: int}
+     */
+    private function pruneRule(ActivityLogRepository $repository, array $rule, string $mode): array
+    {
+        $query = $repository->newQuery()->where('occurred_at', '<', $rule['cutoff']);
+
+        if ($rule['adapter'] !== null) {
+            $query->where('adapter', $rule['adapter']);
+        }
+
+        if ($rule['level'] !== null) {
+            $query->where('level', $rule['level']);
+        }
+
+        if ($rule['action_prefix'] !== null) {
+            $query->where('action', 'like', $rule['action_prefix'].'%');
+        }
+
+        $matched = (clone $query)->toBase()->count();
+        $deleted = $mode === 'force' ? $this->deleteMatchingRecords($query) : 0;
+
+        return [$matched, $deleted];
+    }
+
+    private function renderAggregateResult(string $mode, int $matched, int $deleted, int $passes): int
+    {
+        if ($this->option('json')) {
+            $this->line((string) json_encode([
+                'mode' => $mode,
+                'passes' => $passes,
+                'matched' => $matched,
+                'deleted' => $deleted,
+            ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+
+            return self::SUCCESS;
+        }
+
+        $this->line('Matched: '.$matched);
+        $this->line('Deleted: '.$deleted);
+        $this->line('Mode: '.$mode);
+        $this->line('Passes: '.$passes);
+
+        return self::SUCCESS;
+    }
+
+    private function usesExplicitCutoff(): bool
+    {
+        return $this->filledOption('days') || $this->filledOption('before') || $this->filledOption('type');
     }
 
     private function validateOptions(): ?string

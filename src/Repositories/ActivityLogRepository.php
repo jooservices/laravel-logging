@@ -7,6 +7,7 @@ namespace JOOservices\LaravelLogging\Repositories;
 use Illuminate\Database\Eloquent\Model;
 use JOOservices\LaravelLogging\DTO\ActivityLogData;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
+use JOOservices\LaravelLogging\Support\PromotedFieldPromoter;
 use Jooservices\LaravelRepository\Contracts\CrudRepositoryInterface;
 use Jooservices\LaravelRepository\Repositories\EloquentRepository;
 use Jooservices\LaravelRepository\Traits\HasCrud;
@@ -22,7 +23,8 @@ final class ActivityLogRepository extends EloquentRepository implements CrudRepo
 
     public function record(ActivityLogData $data): ActivityLogRecord
     {
-        $record = $this->create($data->toPersistenceArray());
+        $attributes = PromotedFieldPromoter::apply($data->toPersistenceArray());
+        $record = $this->create($attributes);
 
         if (! $record instanceof ActivityLogRecord) {
             return $this->hydrateRecord($record);

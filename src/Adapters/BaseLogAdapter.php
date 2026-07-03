@@ -58,6 +58,8 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
     protected ?string $userAgent = null;
 
+    protected ?string $tenantId = null;
+
     /** @var array<string, mixed> */
     protected array $properties = [];
 
@@ -223,6 +225,13 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this;
     }
 
+    public function tenantId(string|int|null $tenantId): static
+    {
+        $this->tenantId = $tenantId === null ? null : (string) $tenantId;
+
+        return $this;
+    }
+
     public function batchId(string|int $batchId): static
     {
         $this->context['batch_id'] = (string) $batchId;
@@ -290,6 +299,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
             traceId: $this->traceId,
             ipAddress: $this->ipAddress,
             userAgent: $this->userAgent,
+            tenantId: $this->tenantId,
             properties: $properties,
             context: $context,
             changes: $changes,

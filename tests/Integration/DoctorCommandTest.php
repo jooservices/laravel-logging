@@ -78,4 +78,31 @@ final class DoctorCommandTest extends TestCase
             ->expectsOutputToContain('limits')
             ->assertFailed();
     }
+
+    public function test_doctor_command_reports_invalid_sanitizer_config(): void
+    {
+        $this->app['config']->set('laravel-logging.sanitization.sensitive_keys', ['']);
+
+        $this->artisan('activity-log:doctor')
+            ->expectsOutputToContain('sanitize')
+            ->assertFailed();
+    }
+
+    public function test_doctor_command_reports_invalid_retention_config(): void
+    {
+        $this->app['config']->set('laravel-logging.retention.types', ['activity' => 0]);
+
+        $this->artisan('activity-log:doctor')
+            ->expectsOutputToContain('retention')
+            ->assertFailed();
+    }
+
+    public function test_doctor_command_strict_mode_fails_on_index_warnings(): void
+    {
+        $this->app['config']->set('laravel-logging.collection', 'activity_logs_strict_doctor');
+        $this->clearCollection('activity_logs_strict_doctor');
+
+        $this->artisan('activity-log:doctor', ['--check-indexes' => true, '--strict' => true])
+            ->assertFailed();
+    }
 }
