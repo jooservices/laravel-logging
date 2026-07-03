@@ -9,6 +9,8 @@
 - [Querying](01-usage/04-querying.md)
 - [Retention And Export](01-usage/05-retention-and-export.md)
 - [Model Auditing And Domain Mappers](01-usage/06-model-auditing-and-domain-mappers.md)
+- [Ecosystem Decision Tree](01-usage/07-ecosystem-decision-tree.md)
+- [Adapter Cookbook](01-usage/08-adapter-cookbook.md)
 - [Setup](02-development/01-setup.md)
 - [Testing And Linting](02-development/02-testing-and-linting.md)
 - [AI Contributor Workflow](02-development/03-ai-contributor-workflow.md)

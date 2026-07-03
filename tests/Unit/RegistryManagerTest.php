@@ -88,4 +88,16 @@ final class RegistryManagerTest extends TestCase
         $this->expectException(InvalidLogDataException::class);
         $second->toData();
     }
+
+    public function test_manager_exposes_query_records_and_registry_helpers(): void
+    {
+        /** @var LogAdapterRegistryInterface $registry */
+        $registry = $this->app->make(LogAdapterRegistryInterface::class);
+        $manager = new ActivityLogManager($registry, $this->app->make(ActivityLogRepository::class));
+
+        $this->assertTrue($manager->hasAdapter('activity'));
+        $this->assertArrayHasKey('activity', $manager->adapters());
+        $this->assertNotSame($manager->query(), $manager->records());
+        $this->assertInstanceOf(\JOOservices\LaravelLogging\ActivityLogQuery::class, $manager->query());
+    }
 }

@@ -39,4 +39,43 @@ final class PersistenceTest extends TestCase
         $this->assertSame('system', $document['actor_type']);
         $this->assertNull($document['actor_id']);
     }
+
+    public function test_promoted_fields_are_copied_to_top_level_on_persist(): void
+    {
+        $this->app['config']->set('laravel-logging.promoted_fields', [
+            'site_id' => 'properties.site_id',
+            'workflow_id' => 'context.workflow_id',
+        ]);
+
+        ActivityLog::activity()
+            ->action('crawl.started')
+            ->properties(['site_id' => 42])
+            ->context(['workflow_id' => 'wf-1'])
+            ->save();
+
+        $record = ActivityLog::query()->action('crawl.started')->first();
+
+        $this->assertNotNull($record);
+        $this->assertSame(42, $record->site_id);
+        $this->assertSame('wf-1', $record->workflow_id);
+        $this->assertSame(42, $record->properties['site_id']);
+    }
+
+    public function test_tenant_id_is_persisted_and_queryable(): void
+    {
+        ActivityLog::activity()
+            ->action('tenant.checked')
+            ->tenantId('tenant-99')
+            ->save();
+
+        ActivityLog::activity()
+            ->action('tenant.other')
+            ->tenantId('tenant-1')
+            ->save();
+
+        $record = ActivityLog::query()->tenantId('tenant-99')->action('tenant.checked')->first();
+
+        $this->assertNotNull($record);
+        $this->assertSame('tenant-99', $record->tenant_id);
+    }
 }
