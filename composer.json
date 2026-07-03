@@ -74,7 +74,10 @@
         "test": "vendor/bin/phpunit --testsuite=unit,integration",
         "test:unit": "vendor/bin/phpunit --testsuite=unit",
         "test:integration": "vendor/bin/phpunit --testsuite=integration",
-        "test:coverage": "XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover coverage.xml",
+        "test:coverage": [
+            "XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover coverage.xml",
+            "@php scripts/check-coverage.php 90"
+        ],
         "lint:pint": "vendor/bin/pint --test",
         "lint:pint:fix": "vendor/bin/pint",
         "lint:cs": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --sequential",

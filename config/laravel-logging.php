@@ -27,6 +27,21 @@ return [
 
     'domain_mappers' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Promoted fields
+    |--------------------------------------------------------------------------
+    |
+    | Copy nested values from properties/context onto top-level document fields
+    | before persistence so MongoDB indexes can target them directly.
+    |
+    | Example: 'site_id' => 'properties.site_id'
+    |
+    */
+    'promoted_fields' => [
+        // 'site_id' => 'properties.site_id',
+    ],
+
     'retention' => [
         'enabled' => true,
         'default_days' => 180,
@@ -37,6 +52,24 @@ return [
             'security' => 365,
             'domain' => 90,
             'system' => 30,
+        ],
+        /*
+        |--------------------------------------------------------------------------
+        | Granular retention rules
+        |--------------------------------------------------------------------------
+        |
+        | Each rule matches logs by adapter, level, and/or action_prefix, then
+        | prunes records older than retention_days. Rules run during the default
+        | prune pass (no explicit --type/--days/--before options).
+        |
+        */
+        'rules' => [
+            // [
+            //     'adapter' => 'system',
+            //     'level' => 'debug',
+            //     'action_prefix' => 'http.',
+            //     'retention_days' => 14,
+            // ],
         ],
     ],
 

@@ -38,6 +38,27 @@ final class SanitizationAndPayloadLimiterTest extends TestCase
         $this->assertSame(['password' => 'secret'], $sanitizer->sanitize(['password' => 'secret']));
     }
 
+    public function test_sanitizer_matches_sensitive_patterns_and_case_sensitive_keys(): void
+    {
+        $sanitizer = new DefaultLogSanitizer(
+            keys: ['Token'],
+            replacement: '[redacted]',
+            enabled: true,
+            caseSensitive: true,
+            patterns: ['/secret_/'],
+        );
+
+        $payload = $sanitizer->sanitize([
+            'Token' => 'abc',
+            'token' => 'visible',
+            'secret_value' => 'hidden',
+        ]);
+
+        $this->assertSame('[redacted]', $payload['Token']);
+        $this->assertSame('visible', $payload['token']);
+        $this->assertSame('[redacted]', $payload['secret_value']);
+    }
+
     public function test_payload_limiter_truncates_strings_lists_and_depth(): void
     {
         $limiter = new ActivityLogPayloadLimiter([

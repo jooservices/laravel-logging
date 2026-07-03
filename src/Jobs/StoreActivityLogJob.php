@@ -9,8 +9,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Event;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
 use JOOservices\LaravelLogging\DTO\ActivityLogData;
+use JOOservices\LaravelLogging\Events\ActivityLogStoreFailed;
+use Throwable;
 
 final class StoreActivityLogJob implements ShouldQueue
 {
@@ -24,5 +27,10 @@ final class StoreActivityLogJob implements ShouldQueue
     public function handle(LogStoreInterface $store): void
     {
         $store->record($this->data);
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        Event::dispatch(new ActivityLogStoreFailed($this->data, $exception));
     }
 }

@@ -233,6 +233,83 @@ final class AdapterDataTest extends TestCase
         $this->assertSame(RuntimeException::class, $record->context['exception']['class']);
     }
 
+    public function test_system_shortcuts_capture_lifecycle_actions(): void
+    {
+        $cases = [
+            (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->commandStarted('sync:run')
+                ->save(),
+            (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->commandCompleted('sync:run')
+                ->save(),
+            (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->jobStarted('ImportJob')
+                ->save(),
+            (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->jobCompleted('ImportJob')
+                ->save(),
+            (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->schedulerStarted()
+                ->save(),
+            (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->schedulerCompleted()
+                ->save(),
+            (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->schedulerFailed(new RuntimeException('scheduler down'))
+                ->save(),
+            (new SystemLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->exception(new RuntimeException('captured'))
+                ->save(),
+        ];
+
+        $this->assertSame(
+            ['command.started', 'command.completed', 'job.started', 'job.completed', 'scheduler.started', 'scheduler.completed', 'scheduler.failed', 'exception.captured'],
+            array_map(static fn ($record) => $record->action, $cases),
+        );
+    }
+
+    public function test_security_shortcuts_set_expected_actions_and_levels(): void
+    {
+        $actor = new TestModel(['id' => 1]);
+        $apiKey = new TestModel(['id' => 99]);
+
+        $records = [
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->loginSucceeded($actor)
+                ->save(),
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->logout($actor)
+                ->save(),
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->passwordChanged($actor)
+                ->save(),
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->twoFactorEnabled($actor)
+                ->save(),
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->twoFactorDisabled($actor)
+                ->save(),
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->apiKeyCreated($actor, $apiKey)
+                ->save(),
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->apiKeyDeleted($actor, $apiKey)
+                ->save(),
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->permissionChanged($actor, $apiKey)
+                ->save(),
+            (new SecurityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
+                ->suspicious('rate limit')
+                ->save(),
+        ];
+
+        $this->assertSame(
+            ['login.succeeded', 'logout', 'password.changed', '2fa.enabled', '2fa.disabled', 'api_key.created', 'api_key.deleted', 'permission.changed', 'suspicious.request'],
+            array_map(static fn ($record) => $record->action, $records),
+        );
+        $this->assertSame('rate limit', $records[8]->properties['reason']);
+    }
+
     public function test_with_request_fills_safe_request_context(): void
     {
         $request = Request::create('/demo?x=1', 'POST', ['password' => 'secret'], [], [], [

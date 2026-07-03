@@ -5,18 +5,21 @@ declare(strict_types=1);
 namespace JOOservices\LaravelLogging\Tests\Integration;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use JOOservices\LaravelLogging\ActivityLogOptions;
 use JOOservices\LaravelLogging\Contracts\DomainLogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\DomainLogMapperInterface;
 use JOOservices\LaravelLogging\Contracts\DomainLogMapperRegistryInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
+use JOOservices\LaravelLogging\Events\ActivityLogStoreFailed;
 use JOOservices\LaravelLogging\Facades\ActivityLog;
 use JOOservices\LaravelLogging\Jobs\StoreActivityLogJob;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Tests\Stubs\AuditedTestModel;
 use JOOservices\LaravelLogging\Tests\TestCase;
 use MongoDB\Model\IndexInfo;
+use RuntimeException;
 
 final class OperationalFlowTest extends TestCase
 {
@@ -132,5 +135,21 @@ final class OperationalFlowTest extends TestCase
 
         $this->assertContains(['uuid' => 1], $keys);
         $this->assertContains(['type' => 1, 'action' => 1, 'occurred_at' => -1], $keys);
+    }
+
+    public function test_store_job_failed_dispatches_event(): void
+    {
+        Event::fake([ActivityLogStoreFailed::class]);
+
+        $job = new StoreActivityLogJob(
+            ActivityLog::activity()->action('failed.async')->toData(),
+        );
+
+        $job->failed(new RuntimeException('disk full'));
+
+        Event::assertDispatched(ActivityLogStoreFailed::class, function (ActivityLogStoreFailed $event): bool {
+            return $event->data->action === 'failed.async'
+                && $event->exception?->getMessage() === 'disk full';
+        });
     }
 }

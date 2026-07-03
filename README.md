@@ -160,9 +160,49 @@ $records = ActivityLog::query()
 String identity filters follow logging semantics: strings are named identifiers
 unless an explicit ID is provided.
 
+Terminal helpers and aggregations (v1.2+):
+
+```php
+$latest = ActivityLog::query()->forSubject($target)->action('job.completed')->latestRecord();
+$previous = ActivityLog::query()->forSubject($target)->action('job.completed')->previousRecord();
+$counts = ActivityLog::query()->since($from)->actionPrefix('http.')->countByAction();
+```
+
+See [Querying docs](docs/01-usage/04-querying.md) for `tenantId()`, `actionPrefix()`, and aggregation helpers.
+
+## Promoted Fields And Tenant ID
+
+Copy nested ops dimensions to top-level MongoDB fields for indexing:
+
+```php
+'promoted_fields' => [
+    'site_id' => 'properties.site_id',
+],
+```
+
+```php
+ActivityLog::activity()
+    ->action('import.completed')
+    ->tenantId($tenantId)
+    ->properties(['site_id' => $siteId])
+    ->save();
+```
+
+Re-run `php artisan activity-log:indexes` after changing promoted fields.
+
+## Ecosystem
+
+This package is for **ops/technical logs**. Use
+[laravel-activities](https://github.com/jooservices/laravel-activities) for admin
+UI timelines and [laravel-events](https://github.com/jooservices/laravel-events)
+for compliance event streams. See
+[Ecosystem decision tree](docs/01-usage/07-ecosystem-decision-tree.md) and
+[Adapter cookbook](docs/01-usage/08-adapter-cookbook.md).
+
 ## Retention And Export
 
-Prune old records with configured per-type retention:
+Prune old records with configured per-type retention. Default prune (no flags)
+runs each type from `retention.types`, then `retention.rules`:
 
 ```bash
 php artisan activity-log:prune --dry-run
@@ -270,11 +310,15 @@ and oversized approximate documents before MongoDB persistence.
 
 Documents include classification fields, actor/subject/causer references, source and trace IDs, client context, structured `properties`, `context`, `changes`, `occurred_at`, and Laravel timestamps.
 
-Run `php artisan activity-log:indexes` to create supported top-level indexes. Nested `properties`, `context`, and `changes` keys are not indexed in v1.
+Run `php artisan activity-log:indexes` to create supported top-level indexes.
+Configure `promoted_fields` to index nested ops dimensions (e.g. `site_id`).
+Nested keys inside `properties`, `context`, and `changes` are not indexed unless
+promoted.
 
 Core fields:
 
 - `uuid`, `type`, `adapter`, `level`, `action`, `message`
+- `tenant_id` (optional, v1.2+)
 - `actor_type`, `actor_id`
 - `subject_type`, `subject_id`
 - `causer_type`, `causer_id`
@@ -285,7 +329,8 @@ Core fields:
 ## Development
 
 `composer run check` is the local normal gate: lint plus the unit and
-integration test suites. `composer run ci` is the coverage gate used by CI.
+integration test suites. `composer run ci` is the coverage gate used by CI (lint plus tests with ≥90%
+line coverage enforcement).
 
 ```bash
 composer validate --strict

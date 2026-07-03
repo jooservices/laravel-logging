@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
+use JOOservices\LaravelLogging\Support\ActivityLogAggregator;
 use JOOservices\LaravelLogging\Support\LogIdentity;
 
 final class ActivityLogQuery
@@ -24,6 +25,11 @@ final class ActivityLogQuery
     public function __construct(ActivityLogRepository $repository)
     {
         $this->builder = $repository->newQuery();
+    }
+
+    public function __clone(): void
+    {
+        $this->builder = clone $this->builder;
     }
 
     public function type(string|BackedEnum $type): self
@@ -82,6 +88,18 @@ final class ActivityLogQuery
         return $this->where('trace_id', $traceId);
     }
 
+    public function tenantId(string|int $tenantId): self
+    {
+        return $this->where('tenant_id', (string) $tenantId);
+    }
+
+    public function actionPrefix(string $prefix): self
+    {
+        $this->builder->where('action', 'like', $prefix.'%');
+
+        return $this;
+    }
+
     public function between(DateTimeInterface|string $from, DateTimeInterface|string $to): self
     {
         $this->builder->where('occurred_at', '>=', $this->date($from));
@@ -135,6 +153,47 @@ final class ActivityLogQuery
         $record = $this->builder->first();
 
         return $record instanceof ActivityLogRecord ? $record : null;
+    }
+
+    public function latestRecord(): ?ActivityLogRecord
+    {
+        return (clone $this)->latest()->first();
+    }
+
+    public function previousRecord(): ?ActivityLogRecord
+    {
+        $latest = $this->latestRecord();
+
+        if ($latest === null) {
+            return null;
+        }
+
+        $occurredAt = $latest->occurred_at;
+
+        if ($occurredAt === null) {
+            return null;
+        }
+
+        return (clone $this)
+            ->where('occurred_at', '<', $occurredAt)
+            ->latest()
+            ->first();
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function countByAction(): array
+    {
+        return (new ActivityLogAggregator($this->builder))->countByAction();
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function countByLevel(): array
+    {
+        return (new ActivityLogAggregator($this->builder))->countByLevel();
     }
 
     /**
