@@ -2,6 +2,11 @@
 
 This repository is a PHP 8.5 / Laravel 12/13 package named `jooservices/laravel-logging`.
 
+
+## Mandatory PHP namespace
+
+**FORCE ALWAYS** use `JOOservices\LaravelLogging\` with the exact casing shown.
+
 ## Before coding
 
 - Inspect `git status`, `composer.json`, relevant docs, config, tests, and source files first.
