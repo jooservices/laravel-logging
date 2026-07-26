@@ -2,6 +2,12 @@
 
 All notable changes to `jooservices/laravel-logging` will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Require `jooservices/laravel-repository` `^1.7` and use its canonical `JOOservices\LaravelRepository\` namespace.
+
 ## [v1.2.0] - 2026-07-03
 
 ### Added

@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use JOOservices\LaravelLogging\DTO\ActivityLogData;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Support\PromotedFieldPromoter;
-use Jooservices\LaravelRepository\Contracts\CrudRepositoryInterface;
-use Jooservices\LaravelRepository\Repositories\EloquentRepository;
-use Jooservices\LaravelRepository\Traits\HasCrud;
+use JOOservices\LaravelRepository\Contracts\CrudRepositoryInterface;
+use JOOservices\LaravelRepository\Repositories\EloquentRepository;
+use JOOservices\LaravelRepository\Traits\HasCrud;
 
 final class ActivityLogRepository extends EloquentRepository implements CrudRepositoryInterface
 {
