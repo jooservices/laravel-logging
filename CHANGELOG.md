@@ -2,6 +2,16 @@
 
 All notable changes to `jooservices/laravel-logging` will be documented in this file.
 
+## [Unreleased]
+
+## [v1.3.0] - 2026-07-26
+
+### Changed
+
+- Require `jooservices/laravel-repository` `^1.7` and use its canonical `JOOservices\LaravelRepository\` namespace.
+- Refresh the Composer lock from published packages and update Guzzle to a release without the current security advisories.
+- Add standard CI, Codecov, OpenSSF Scorecard, PHP, license, and Packagist badges to the README.
+
 ## [v1.2.0] - 2026-07-03
 
 ### Added
@@ -54,3 +64,9 @@ Initial stable release.
 - Console tooling for health checks, index installation, pruning, and export workflows.
 - Opt-in model audit logging and domain event mapper support.
 - Package quality gates covering formatting, static analysis, and automated test execution.
+
+[Unreleased]: https://github.com/jooservices/laravel-logging/compare/v1.3.0...HEAD
+[v1.3.0]: https://github.com/jooservices/laravel-logging/compare/v1.2.0...v1.3.0
+[v1.2.0]: https://github.com/jooservices/laravel-logging/compare/v1.1.0...v1.2.0
+[v1.1.0]: https://github.com/jooservices/laravel-logging/compare/v1.0.0...v1.1.0
+[v1.0.0]: https://github.com/jooservices/laravel-logging/releases/tag/v1.0.0
