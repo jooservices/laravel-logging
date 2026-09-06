@@ -4,6 +4,8 @@ All notable changes to `jooservices/laravel-logging` will be documented in this 
 
 ## [Unreleased]
 
+## [v4.0.0] - 2026-09-06
+
 ### Added
 - Bulk `recordMany` on store/manager/facade
 - Query helpers `batchId`, `workflowId`, `wherePromoted`, `relatedTo`
@@ -105,7 +107,8 @@ Initial stable release.
 - Opt-in model audit logging and domain event mapper support.
 - Package quality gates covering formatting, static analysis, and automated test execution.
 
-[Unreleased]: https://github.com/jooservices/laravel-logging/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/jooservices/laravel-logging/compare/v4.0.0...HEAD
+[v4.0.0]: https://github.com/jooservices/laravel-logging/compare/v1.3.0...v4.0.0
 [v1.3.0]: https://github.com/jooservices/laravel-logging/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/jooservices/laravel-logging/compare/v1.1.0...v1.2.0
 [v1.1.0]: https://github.com/jooservices/laravel-logging/compare/v1.0.0...v1.1.0

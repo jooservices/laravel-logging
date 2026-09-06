@@ -1,6 +1,6 @@
 # Upgrade guide
 
-## Unreleased → next (dto ^3 / repository ^4)
+## v1.x → v4.0.0 (dto ^3 / repository ^4)
 
 ### Composer
 
