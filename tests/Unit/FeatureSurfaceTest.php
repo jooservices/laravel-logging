@@ -153,6 +153,16 @@ final class FeatureSurfaceTest extends TestCase
         $this->assertSame(30 * 86400, $ttl['options']['expireAfterSeconds']);
     }
 
+    public function test_activity_log_options_fluent_helpers(): void
+    {
+        $options = \JOOservices\LaravelLogging\ActivityLogOptions::make()
+            ->dontSubmitEmptyLogs()
+            ->actionPrefix('entity');
+
+        $this->assertFalse($options->submitEmptyLogs);
+        $this->assertSame('entity', $options->actionPrefix);
+    }
+
     public function test_http_middleware_skips_when_disabled(): void
     {
         config()->set('laravel-logging.http.enabled', false);
