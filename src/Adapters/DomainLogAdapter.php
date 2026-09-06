@@ -30,21 +30,15 @@ final class DomainLogAdapter extends BaseLogAdapter implements DomainLogAdapterI
         parent::__construct($store, $sanitizer, $payloadLimiter, $contextResolver);
     }
 
-    public function fromEvent(object $event): static
+    public function fromEvent(object $event): DomainLogAdapterInterface
     {
         $mapper = $this->mapperRegistry?->resolveFor($event);
 
-        if ($mapper !== null) {
-            $mapped = $mapper->map($event, $this);
-
-            if ($mapped instanceof self) {
-                return $mapped;
-            }
-
-            return $this;
+        if ($mapper === null) {
+            return $this->project($event);
         }
 
-        return $this->project($event);
+        return $mapper->map($event, $this);
     }
 
     public function project(object $event): static

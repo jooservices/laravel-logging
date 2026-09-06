@@ -27,13 +27,17 @@ The format sanity check is wired into `composer run lint:all`:
 composer run format:sanity
 ```
 
-MongoDB integration tests require a running MongoDB server:
+MongoDB persistence tests require a running MongoDB server:
 
 ```bash
-MONGODB_URI=mongodb://localhost:27017 composer run test:integration
+MONGODB_URI=mongodb://localhost:27017 composer run test
 ```
 
-Without MongoDB, integration tests skip with an explicit message.
+CI always sets `MONGODB_URI` (and `CI=true`). If MongoDB is unreachable while
+`MONGODB_URI` or `CI` is set, those tests **fail** — they do not skip.
+
+Without `MONGODB_URI` and outside CI, unreachable MongoDB causes an explicit
+skip so a pure unit run can stay green when persistence is unavailable.
 
 Testing policy for this repository:
 

@@ -7,8 +7,8 @@ namespace JOOservices\LaravelLogging\Contracts;
 interface LogSanitizerInterface
 {
     /**
-     * @param  array<string, mixed>  $payload
-     * @return array<string, mixed>
+     * @param  array<array-key, mixed>  $payload
+     * @return array<array-key, mixed>
      */
     public function sanitize(array $payload): array;
 }

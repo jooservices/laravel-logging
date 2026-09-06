@@ -184,7 +184,7 @@ final class QueryAndCommandTest extends TestCase
         ])->assertSuccessful();
 
         $this->assertFileExists($csv);
-        $this->assertStringStartsWith('uuid,type,action,description,level', (string) file($csv)[0]);
+        $this->assertStringStartsWith('uuid,type,action,message,level', (string) file($csv)[0]);
 
         @unlink($jsonl);
         @unlink($csv);

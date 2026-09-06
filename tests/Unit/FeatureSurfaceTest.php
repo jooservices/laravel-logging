@@ -151,6 +151,11 @@ final class FeatureSurfaceTest extends TestCase
 
         $this->assertIsArray($ttl);
         $this->assertSame(30 * 86400, $ttl['options']['expireAfterSeconds']);
+
+        $occurredAtIndexes = collect(IndexesCommand::expectedIndexes())->filter(
+            fn(array $index): bool => ($index['keys'] ?? null) === ['occurred_at' => 1],
+        );
+        $this->assertCount(1, $occurredAtIndexes);
     }
 
     public function test_activity_log_options_fluent_helpers(): void

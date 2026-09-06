@@ -6,6 +6,7 @@ namespace JOOservices\LaravelLogging\Concerns;
 
 use JOOservices\LaravelLogging\ActivityLogOptions;
 use JOOservices\LaravelLogging\Facades\ActivityLog;
+use JOOservices\LaravelLogging\Support\AuditableAttributes;
 
 trait LogsActivity
 {
@@ -28,8 +29,13 @@ trait LogsActivity
     protected function writeActivityLog(string $event): mixed
     {
         $options = $this->activityLogOptions();
-        $before = $event === 'created' ? [] : $this->getOriginal();
-        $after = $event === 'deleted' ? [] : $this->getAttributes();
+        $hidden = array_values($this->getHidden());
+        $before = $event === 'created'
+            ? []
+            : AuditableAttributes::filter($this->getOriginal(), $options->only, $options->except, $hidden);
+        $after = $event === 'deleted'
+            ? []
+            : AuditableAttributes::filter($this->getAttributes(), $options->only, $options->except, $hidden);
         $changes = $this->activityLogChanges($before, $after, $options);
 
         if ($changes === [] && ! $options->submitEmptyLogs) {

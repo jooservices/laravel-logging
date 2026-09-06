@@ -139,24 +139,6 @@ parameters:
 			path: src/Console/Commands/InstallActivityLogIndexesCommand.php
 
 		-
-			message: '#^Cannot cast array\|bool\|float\|int\|string\|null to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Console/Commands/MakeLogAdapterCommand.php
-
-		-
-			message: '#^Parameter \#2 \$replace of function str_replace expects array\<string\>\|string, array\<int, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Console/Commands/MakeLogAdapterCommand.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Console/Commands/PruneActivityLogsCommand.php
-
-		-
 			message: '#^Binary operation "\." between ''Unknown activity…'' and array\|bool\|float\|int\|string\|null results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
@@ -165,12 +147,6 @@ parameters:
 		-
 			message: '#^Binary operation "\." between mixed and ''\]\.'' results in an error\.$#'
 			identifier: binaryOp.invalid
-			count: 1
-			path: src/Console/Commands/PruneActivityLogsCommand.php
-
-		-
-			message: '#^Cannot call method cursor\(\) on mixed\.$#'
-			identifier: method.nonObject
 			count: 1
 			path: src/Console/Commands/PruneActivityLogsCommand.php
 
@@ -265,18 +241,6 @@ parameters:
 			path: src/Contracts/LogAdapterRegistryInterface.php
 
 		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/DTO/LogActorData.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/DTO/LogSubjectData.php
-
-		-
 			message: '#^Method JOOservices\\LaravelLogging\\DomainLogMapperRegistry\:\:key\(\) has parameter \$mapper with no signature specified for callable\.$#'
 			identifier: missingType.callable
 			count: 1
@@ -349,28 +313,10 @@ parameters:
 			path: src/LogAdapterRegistry.php
 
 		-
-			message: '#^Method JOOservices\\LaravelLogging\\Models\\ActivityLogRecord\:\:getConnectionName\(\) should return string\|null but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Models/ActivityLogRecord.php
-
-		-
-			message: '#^Method JOOservices\\LaravelLogging\\Models\\ActivityLogRecord\:\:getTable\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Models/ActivityLogRecord.php
-
-		-
 			message: '#^Parameter \#1 \$payload of method JOOservices\\LaravelLogging\\Services\\ActivityLogPayloadLimiter\:\:limitDocumentSize\(\) expects array\<string, mixed\>, array\<mixed, mixed\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Services/ActivityLogPayloadLimiter.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Support/ActivityLogAggregator.php
 
 		-
 			message: '#^Cannot cast mixed to string\.$#'
@@ -418,12 +364,6 @@ parameters:
 			message: '#^Call to an undefined method Illuminate\\Database\\Connection\:\:getCollection\(\)\.$#'
 			identifier: method.notFound
 			count: 1
-			path: tests/Integration/PersistenceTest.php
-
-		-
-			message: '#^Call to an undefined method JOOservices\\LaravelLogging\\Contracts\\ActivityLogAdapterInterface\:\:tenantId\(\)\.$#'
-			identifier: method.notFound
-			count: 2
 			path: tests/Integration/PersistenceTest.php
 
 		-

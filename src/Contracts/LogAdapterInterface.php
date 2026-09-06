@@ -66,6 +66,8 @@ interface LogAdapterInterface
 
     public function workflowId(string | int $workflowId): static;
 
+    public function tenantId(string | int | null $tenantId): static;
+
     public function occurredAt(DateTimeInterface | string | null $occurredAt): static;
 
     public function sync(): static;

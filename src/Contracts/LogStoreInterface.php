@@ -10,6 +10,12 @@ use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 
 interface LogStoreInterface
 {
+    /**
+     * Sanitize and limit bags before persist or queue serialization.
+     * Persist paths call this again; already-redacted payloads stay safe.
+     */
+    public function prepare(ActivityLogData $data): ActivityLogData;
+
     public function record(ActivityLogData $data): ActivityLogRecord;
 
     /**

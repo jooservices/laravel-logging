@@ -4,23 +4,15 @@ This roadmap tracks improvements that fit the MongoDB-backed structured
 logging scope. It rejects storage expansion, dashboards, analytics products,
 and observability platform replacement work.
 
+## Done (keep for history)
+
+### Coverage Gate At 90%
+
+- CI enforces ≥90% line coverage via `scripts/check-coverage.php` on the
+  Laravel 12 clover report (`composer run ci` / Coverage upload).
+- Local gate: `composer run test:coverage`.
+
 ## Must Do
-
-### Raise Coverage To 90%
-
-- What: Add focused tests until statement coverage reaches at least 90%, then
-  enforce the threshold in CI.
-- Why: CI now runs `composer run ci`, but the current measured statement
-  coverage is 82.09%, below the desired DTO-style threshold.
-- How: Cover low-risk gaps in command failures, query filters, adapter edge
-  cases, sanitizer patterns, payload document trimming, and service-provider
-  configuration validation.
-- Benefit: Makes coverage enforcement meaningful without faking quality.
-- Risk: Broad tests can become brittle if they assert MongoDB implementation
-  details instead of public package behavior.
-- Tests required: PHPUnit coverage tests through real package services and
-  MongoDB-backed integration paths where persistence behavior is involved.
-- Priority: must do.
 
 ### Harden Export Failure Coverage
 
@@ -65,6 +57,16 @@ and observability platform replacement work.
   aggressively.
 - Tests required: Integration tests around `activity-log:doctor --json`,
   `--strict`, and `--check-indexes`.
+- Priority: should do.
+
+### Shrink PHPStan Baseline
+
+- What: Narrow artisan `option()` types and registry callable signatures so
+  baseline entries can be removed.
+- Why: Baseline should shrink, not accumulate.
+- How: Type artisan options at the call site; add callable signatures on
+  register/replace; keep `reportUnmatchedIgnoredErrors: true`.
+- Benefit: Surfaces real regressions instead of papering over them.
 - Priority: should do.
 
 ## Optional

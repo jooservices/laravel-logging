@@ -35,6 +35,8 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
             $keys = config('laravel-logging.sanitization.sensitive_keys', config('laravel-logging.sanitize.keys', []));
             /** @var array<int, string> $patterns */
             $patterns = config('laravel-logging.sanitization.sensitive_patterns', []);
+            /** @var array<int, string> $valuePatterns */
+            $valuePatterns = config('laravel-logging.sanitization.value_patterns', []);
 
             return new DefaultLogSanitizer(
                 keys: $keys,
@@ -42,6 +44,7 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
                 enabled: (bool) config('laravel-logging.sanitization.enabled', true),
                 caseSensitive: (bool) config('laravel-logging.sanitization.case_sensitive', false),
                 patterns: $patterns,
+                valuePatterns: $valuePatterns,
             );
         });
 

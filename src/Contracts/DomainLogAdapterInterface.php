@@ -6,7 +6,7 @@ namespace JOOservices\LaravelLogging\Contracts;
 
 interface DomainLogAdapterInterface extends LogAdapterInterface
 {
-    public function fromEvent(object $event): static;
+    public function fromEvent(object $event): DomainLogAdapterInterface;
 
     public function project(object $event): static;
 }

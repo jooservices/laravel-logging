@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace JOOservices\LaravelLogging;
 
+use JOOservices\LaravelLogging\Support\AuditableAttributes;
+
 final class ActivityLogOptions
 {
     /** @var array<int, string>|null */
@@ -12,15 +14,18 @@ final class ActivityLogOptions
     /** @var array<int, string> */
     public array $except = [];
 
-    public bool $logOnlyDirty = false;
+    public bool $logOnlyDirty = true;
 
-    public bool $submitEmptyLogs = true;
+    public bool $submitEmptyLogs = false;
 
     public string $actionPrefix = 'model';
 
     public static function make(): self
     {
-        return new self();
+        $options = new self();
+        $options->except = AuditableAttributes::defaultExcept();
+
+        return $options;
     }
 
     /**
@@ -38,7 +43,7 @@ final class ActivityLogOptions
      */
     public function except(array $fields): self
     {
-        $this->except = array_values($fields);
+        $this->except = array_values(array_unique([...AuditableAttributes::defaultExcept(), ...$fields]));
 
         return $this;
     }
