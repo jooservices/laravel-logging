@@ -78,4 +78,24 @@ final class PromotedFieldPromoterTest extends TestCase
         $this->assertCount(2, $indexes);
         $this->assertSame(['site_id' => 1], $indexes[0]['keys']);
     }
+
+    public function test_promoted_field_promoter_skips_reserved_target_fields(): void
+    {
+        $this->app['config']->set('laravel-logging.promoted_fields', [
+            'action' => 'context.should_not_overwrite',
+            'batch_id' => 'context.batch',
+            '' => 'context.ignored',
+        ]);
+
+        $document = PromotedFieldPromoter::apply([
+            'action' => 'keep-me',
+            'context' => [
+                'should_not_overwrite' => 'nope',
+                'batch' => 'b-1',
+            ],
+        ]);
+
+        $this->assertSame('keep-me', $document['action']);
+        $this->assertSame('b-1', $document['batch_id']);
+    }
 }

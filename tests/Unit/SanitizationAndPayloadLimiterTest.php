@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace JOOservices\LaravelLogging\Tests\Unit;
 
+use ArrayIterator;
 use JOOservices\LaravelLogging\Services\ActivityLogPayloadLimiter;
 use JOOservices\LaravelLogging\Services\DefaultLogSanitizer;
+use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -111,6 +113,45 @@ final class SanitizationAndPayloadLimiterTest extends TestCase
         );
 
         $this->assertSame(['token' => 'visible'], $sanitizer->sanitize(['token' => 'visible']));
+    }
+
+    public function test_sanitizer_redacts_json_serializable_traversable_and_object_bags(): void
+    {
+        $sanitizer = new DefaultLogSanitizer(
+            keys: ['token'],
+            replacement: '[redacted]',
+            valuePatterns: ['/(?i)^Bearer\s+/'],
+        );
+
+        $jsonObject = new class implements JsonSerializable {
+            /**
+             * @return array<string, mixed>
+             */
+            public function jsonSerialize(): array
+            {
+                return ['token' => 'secret', 'ok' => 1];
+            }
+        };
+        $scalarJson = new class implements JsonSerializable {
+            public function jsonSerialize(): string
+            {
+                return 'Bearer abc.def.ghi';
+            }
+        };
+
+        $payload = $sanitizer->sanitize([
+            'wrapped' => $jsonObject,
+            'iterator' => new ArrayIterator(['token' => 'x', 'keep' => 'y']),
+            'plain' => (object) ['token' => 'z', 'keep' => 'y'],
+            'scalar' => $scalarJson,
+        ]);
+
+        $this->assertSame('[redacted]', $payload['wrapped']['token']);
+        $this->assertSame(1, $payload['wrapped']['ok']);
+        $this->assertSame('[redacted]', $payload['iterator']['token']);
+        $this->assertSame('y', $payload['iterator']['keep']);
+        $this->assertSame('[redacted]', $payload['plain']['token']);
+        $this->assertSame('[redacted]', $payload['scalar']);
     }
 
     public function test_sanitizer_can_be_disabled(): void

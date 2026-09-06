@@ -89,4 +89,19 @@ final class DefaultLogContextResolverTest extends TestCase
         $this->assertArrayNotHasKey('external_request_id', $requestContext);
         $this->assertNull($first['trace_id']);
     }
+
+    public function test_resolve_truncates_long_user_agent_and_rejects_invalid_external_ids(): void
+    {
+        $request = Request::create('/demo', 'GET', [], [], [], [
+            'HTTP_USER_AGENT' => str_repeat('U', 600),
+            'HTTP_X_REQUEST_ID' => 'bad id with spaces',
+        ]);
+
+        $resolved = (new DefaultLogContextResolver($this->app))->resolve($request);
+
+        $this->assertSame(512, mb_strlen((string) $resolved['user_agent']));
+        $requestContext = $resolved['context']['request'] ?? [];
+        $this->assertIsArray($requestContext);
+        $this->assertArrayNotHasKey('external_request_id', $requestContext);
+    }
 }
