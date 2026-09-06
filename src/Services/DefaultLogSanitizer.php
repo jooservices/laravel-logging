@@ -18,7 +18,8 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
         private readonly bool $enabled = true,
         private readonly bool $caseSensitive = false,
         private readonly array $patterns = [],
-    ) {}
+    ) {
+    }
 
     public function sanitize(array $payload): array
     {
@@ -60,7 +61,7 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
         }
 
         foreach ($this->patterns as $pattern) {
-            set_error_handler(static fn (): bool => true);
+            set_error_handler(static fn(): bool => true);
             $matched = preg_match($pattern, $key) === 1;
             restore_error_handler();
 

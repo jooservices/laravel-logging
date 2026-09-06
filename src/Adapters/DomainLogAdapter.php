@@ -52,7 +52,7 @@ final class DomainLogAdapter extends BaseLogAdapter implements DomainLogAdapterI
         $shortName = (new ReflectionClass($event))->getShortName();
 
         return $this
-            ->action('domain.'.str($shortName)->snake('.')->toString())
+            ->action('domain.' . str($shortName)->snake('.')->toString())
             ->properties(['event' => $event::class]);
     }
 }

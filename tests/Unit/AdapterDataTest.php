@@ -187,14 +187,12 @@ final class AdapterDataTest extends TestCase
 
     public function test_domain_mapper_registry_uses_matching_mapper(): void
     {
-        $event = new class
-        {
+        $event = new class {
             public string $subject = 'invoice';
         };
         $registry = new DomainLogMapperRegistry($this->app);
 
-        $registry->register(fn (): DomainLogMapperInterface => new class implements DomainLogMapperInterface
-        {
+        $registry->register(fn(): DomainLogMapperInterface => new class implements DomainLogMapperInterface {
             public function supports(object $event): bool
             {
                 return property_exists($event, 'subject');
@@ -264,7 +262,7 @@ final class AdapterDataTest extends TestCase
 
         $this->assertSame(
             ['command.started', 'command.completed', 'job.started', 'job.completed', 'scheduler.started', 'scheduler.completed', 'scheduler.failed', 'exception.captured'],
-            array_map(static fn ($record) => $record->action, $cases),
+            array_map(static fn($record) => $record->action, $cases),
         );
     }
 
@@ -305,7 +303,7 @@ final class AdapterDataTest extends TestCase
 
         $this->assertSame(
             ['login.succeeded', 'logout', 'password.changed', '2fa.enabled', '2fa.disabled', 'api_key.created', 'api_key.deleted', 'permission.changed', 'suspicious.request'],
-            array_map(static fn ($record) => $record->action, $records),
+            array_map(static fn($record) => $record->action, $records),
         );
         $this->assertSame('rate limit', $records[8]->properties['reason']);
     }
@@ -329,6 +327,7 @@ final class AdapterDataTest extends TestCase
         $this->assertSame('corr-1', $record->correlation_id);
         $this->assertSame('4bf92f3577b34da6a3ce929d0e0e4736', $record->trace_id);
         $this->assertSame('UnitTest', $record->user_agent);
+        $this->assertSame('http://localhost/demo', $record->context['request']['url']);
         $this->assertArrayNotHasKey('password', $record->context['request']);
     }
 

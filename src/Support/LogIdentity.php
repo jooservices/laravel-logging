@@ -12,7 +12,7 @@ final class LogIdentity
     /**
      * @return array{type: string|null, id: string|null}
      */
-    public static function actor(Model|Authenticatable|string|null $target, string|int|null $id = null): array
+    public static function actor(Model | Authenticatable | string | null $target, string | int | null $id = null): array
     {
         if ($target === null) {
             return ['type' => null, 'id' => null];
@@ -32,7 +32,7 @@ final class LogIdentity
     /**
      * @return array{type: string|null, id: string|null}
      */
-    public static function subject(Model|string|null $target, string|int|null $id = null): array
+    public static function subject(Model | string | null $target, string | int | null $id = null): array
     {
         if ($target === null) {
             return ['type' => null, 'id' => null];

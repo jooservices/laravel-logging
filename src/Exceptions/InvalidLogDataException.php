@@ -6,4 +6,6 @@ namespace JOOservices\LaravelLogging\Exceptions;
 
 use RuntimeException;
 
-final class InvalidLogDataException extends RuntimeException {}
+final class InvalidLogDataException extends RuntimeException
+{
+}

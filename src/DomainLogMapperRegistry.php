@@ -14,14 +14,16 @@ final class DomainLogMapperRegistry implements DomainLogMapperRegistryInterface
     /** @var array<string, string|callable> */
     private array $mappers = [];
 
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private readonly Container $container)
+    {
+    }
 
-    public function register(string|callable $mapper): void
+    public function register(string | callable $mapper): void
     {
         $this->mappers[$this->key($mapper)] = $mapper;
     }
 
-    public function replace(string $mapperClass, string|callable $mapper): void
+    public function replace(string $mapperClass, string | callable $mapper): void
     {
         $this->mappers[$mapperClass] = $mapper;
     }
@@ -39,18 +41,18 @@ final class DomainLogMapperRegistry implements DomainLogMapperRegistryInterface
         return null;
     }
 
-    private function resolve(string|callable $mapper): DomainLogMapperInterface
+    private function resolve(string | callable $mapper): DomainLogMapperInterface
     {
         $resolved = is_string($mapper) ? $this->container->make($mapper) : $mapper($this->container);
 
         if (! $resolved instanceof DomainLogMapperInterface) {
-            throw new InvalidLogAdapterException('Domain log mapper must implement '.DomainLogMapperInterface::class.'.');
+            throw new InvalidLogAdapterException('Domain log mapper must implement ' . DomainLogMapperInterface::class . '.');
         }
 
         return $resolved;
     }
 
-    private function key(string|callable $mapper): string
+    private function key(string | callable $mapper): string
     {
         return is_string($mapper) ? $mapper : spl_object_hash((object) $mapper);
     }

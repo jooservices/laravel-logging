@@ -11,7 +11,9 @@ use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 
 final class DefaultLogContextResolver implements LogContextResolverInterface
 {
-    public function __construct(private readonly Application $app) {}
+    public function __construct(private readonly Application $app)
+    {
+    }
 
     public function resolve(?Request $request = null): array
     {
@@ -42,7 +44,9 @@ final class DefaultLogContextResolver implements LogContextResolverInterface
             'context' => [
                 'request' => [
                     'method' => $request->method(),
-                    'url' => $request->fullUrl(),
+                    // Prefer url() over fullUrl() so query-string secrets
+                    // (signed URLs, OAuth codes) are not persisted by default.
+                    'url' => $request->url(),
                     'route' => $request->route()?->getName(),
                 ],
             ],

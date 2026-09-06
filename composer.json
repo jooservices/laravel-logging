@@ -30,14 +30,15 @@
     },
     "require": {
         "php": "^8.5",
-        "jooservices/dto": "^1.0",
-        "jooservices/laravel-repository": "^1.7",
+        "jooservices/dto": "^3.0",
+        "jooservices/laravel-repository": "^4.0",
         "laravel/framework": "^12.0|^13.0",
         "mongodb/laravel-mongodb": "^5.7"
     },
     "require-dev": {
         "captainhook/captainhook": "^5.23",
         "captainhook/plugin-composer": "^5.3",
+        "fakerphp/faker": "^1.23",
         "friendsofphp/php-cs-fixer": "^3.65",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.18",
@@ -83,13 +84,15 @@
         "lint:cs": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --sequential",
         "lint:cs:fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --sequential",
         "lint:phpcs": "vendor/bin/phpcs --standard=phpcs.xml",
-        "lint:phpstan": "XDEBUG_MODE=off vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=512M",
+        "lint:phpstan": "XDEBUG_MODE=off vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit=512M",
         "lint:phpmd": "php -d error_reporting=6143 vendor/bin/phpmd src text phpmd.xml",
         "format:sanity": "php scripts/check-format-sanity.php",
         "lint": [
             "@lint:pint",
             "@lint:phpcs",
-            "@lint:phpstan"
+            "@lint:phpstan",
+            "@lint:phpmd",
+            "@lint:cs"
         ],
         "lint:all": [
             "@format:sanity",

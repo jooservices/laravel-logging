@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use JOOservices\LaravelLogging\Console\Commands\ActivityLogDoctorCommand;
 use JOOservices\LaravelLogging\Console\Commands\ExportActivityLogsCommand;
 use JOOservices\LaravelLogging\Console\Commands\InstallActivityLogIndexesCommand;
+use JOOservices\LaravelLogging\Console\Commands\MakeLogAdapterCommand;
 use JOOservices\LaravelLogging\Console\Commands\PruneActivityLogsCommand;
 use JOOservices\LaravelLogging\Contracts\ActivityLogManagerInterface;
 use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
@@ -27,7 +28,7 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/laravel-logging.php', 'laravel-logging');
+        $this->mergeConfigFrom(__DIR__ . '/../config/laravel-logging.php', 'laravel-logging');
 
         $this->app->singleton(LogSanitizerInterface::class, function (): DefaultLogSanitizer {
             /** @var array<int, string> $keys */
@@ -55,10 +56,10 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
             $model = (string) config('laravel-logging.model', ActivityLogRecord::class);
 
             if ($model !== ActivityLogRecord::class && ! is_subclass_of($model, ActivityLogRecord::class)) {
-                throw new LoggingConfigurationException('Configured activity log model must extend '.ActivityLogRecord::class.'.');
+                throw new LoggingConfigurationException('Configured activity log model must extend ' . ActivityLogRecord::class . '.');
             }
 
-            return new $model;
+            return new $model();
         });
 
         $this->app->singleton(ActivityLogRepository::class, function (): ActivityLogRepository {
@@ -76,7 +77,7 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->publishes([
-            __DIR__.'/../config/laravel-logging.php' => config_path('laravel-logging.php'),
+            __DIR__ . '/../config/laravel-logging.php' => config_path('laravel-logging.php'),
         ], 'laravel-logging-config');
 
         if ($this->app->runningInConsole()) {
@@ -84,9 +85,14 @@ final class LaravelLoggingServiceProvider extends ServiceProvider
                 ActivityLogDoctorCommand::class,
                 ExportActivityLogsCommand::class,
                 InstallActivityLogIndexesCommand::class,
+                MakeLogAdapterCommand::class,
                 PruneActivityLogsCommand::class,
             ]);
         }
+
+        $this->publishes([
+            __DIR__ . '/../stubs/log-adapter.stub' => base_path('stubs/log-adapter.stub'),
+        ], 'laravel-logging-stubs');
 
         /** @var LogAdapterRegistryInterface $registry */
         $registry = $this->app->make(LogAdapterRegistryInterface::class);

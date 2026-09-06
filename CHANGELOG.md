@@ -4,6 +4,20 @@ All notable changes to `jooservices/laravel-logging` will be documented in this 
 
 ## [Unreleased]
 
+### Added
+- Bulk `recordMany` on store/manager/facade
+- Query helpers `batchId`, `workflowId`, `wherePromoted`, `relatedTo`
+- Optional TTL index config (`ttl.*`) for `activity-log:indexes`
+- Opt-in HTTP middleware `LogHttpRequest`
+- Artisan `make:log-adapter` with publishable stub
+- Doctor checks for domain mappers, TTL, HTTP, retention disabled warning
+- JOO governance docs, Docker/Makefile, workflows, docs tree `00–05`, cookbook
+
+### Changed
+- Require `jooservices/dto` `^3.0` and `jooservices/laravel-repository` `^4.0`
+- Pint preset `per`; PHPStan level `max` with baseline for legacy findings
+- `ActivityLogRepository` uses repository v4 `HasCrud` + `HasRead`
+
 ## [v1.3.0] - 2026-07-26
 
 ### Changed

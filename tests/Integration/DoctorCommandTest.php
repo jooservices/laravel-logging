@@ -33,7 +33,7 @@ final class DoctorCommandTest extends TestCase
     {
         /** @var LogAdapterRegistryInterface $registry */
         $registry = $this->app->make(LogAdapterRegistryInterface::class);
-        $registry->replace('activity', fn (): stdClass => new stdClass);
+        $registry->replace('activity', fn(): stdClass => new stdClass());
 
         $this->artisan('activity-log:doctor')
             ->expectsOutputToContain('adapter:activity')
@@ -42,7 +42,7 @@ final class DoctorCommandTest extends TestCase
 
     public function test_doctor_command_reports_invalid_store_binding(): void
     {
-        $this->app->bind(LogStoreInterface::class, fn (): stdClass => new stdClass);
+        $this->app->bind(LogStoreInterface::class, fn(): stdClass => new stdClass());
 
         $this->artisan('activity-log:doctor')
             ->expectsOutputToContain('store')

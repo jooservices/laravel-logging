@@ -1,0 +1,54 @@
+includes:
+    - phpstan-baseline.neon
+    - vendor/larastan/larastan/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
+parameters:
+    paths:
+        - src
+        - tests
+    level: max
+    treatPhpDocTypesAsCertain: false
+    checkMissingCallableSignature: true
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - '~Parameter #\d+ .+ expects .+, Mockery\\(MockInterface|LegacyMockInterface) given\.~'
+        -
+            message: '~Call to an undefined method Mockery\\.*~'
+            path: tests/*
+        -
+            identifier: method.nonObject
+            path: tests/*
+        -
+            identifier: offsetAccess.nonOffsetAccessible
+            path: tests/*
+        -
+            identifier: offsetAccess.notFound
+            path: tests/*
+        -
+            message: '~Called .env. outside of the config directory~'
+            path: tests/*
+        -
+            message: '~Trait .+ is used zero times and is not analysed\.~'
+            path: src/Concerns/*.php
+        -
+            identifier: staticMethod.dynamicCall
+            message: '~Illuminate\\Database\\Eloquent\\Builder~'
+        -
+            identifier: staticMethod.dynamicCall
+            path: tests/*
+        -
+            identifier: staticMethod.alreadyNarrowedType
+            path: tests/*
+        # Orchestra Testbench $this->app nullable in analysis
+        -
+            message: '~Illuminate\\Foundation\\Application\|null~'
+            path: tests/*
+        -
+            message: '~Cannot call method set\(\) on mixed~'
+            path: tests/*
+        -
+            message: '~Cannot call method .+ on mixed~'
+            path: tests/*

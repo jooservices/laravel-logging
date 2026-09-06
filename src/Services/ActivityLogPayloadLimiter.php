@@ -18,7 +18,9 @@ final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterf
      *     truncate_marker?: string
      * }  $config
      */
-    public function __construct(private readonly array $config) {}
+    public function __construct(private readonly array $config)
+    {
+    }
 
     public function limit(array $payload): array
     {
@@ -78,7 +80,7 @@ final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterf
             return $value;
         }
 
-        return mb_substr($value, 0, $maxLength).$this->marker();
+        return mb_substr($value, 0, $maxLength) . $this->marker();
     }
 
     /**

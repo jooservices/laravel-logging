@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpdocumentor
+    configVersion="3"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://www.phpdoc.org"
+    xsi:noNamespaceSchemaLocation="data/xsd/phpdoc.xsd"
+>
+    <title>JOOservices Laravel Logging API Reference</title>
+
+    <paths>
+        <output>build</output>
+    </paths>
+
+    <version number="1.0.0">
+        <folder>latest</folder>
+        <api>
+            <source dsn=".">
+                <path>src</path>
+            </source>
+            <output>api</output>
+
+            <ignore hidden="true" symlinks="true">
+                <path>vendor/**/*</path>
+                <path>tests/**/*</path>
+                <path>docs/**/*</path>
+                <path>build/**/*</path>
+            </ignore>
+            <extensions>
+                <extension>php</extension>
+            </extensions>
+            <ignore-tags>
+                <ignore-tag>template</ignore-tag>
+                <ignore-tag>template-extends</ignore-tag>
+                <ignore-tag>template-implements</ignore-tag>
+                <ignore-tag>extends</ignore-tag>
+                <ignore-tag>implements</ignore-tag>
+            </ignore-tags>
+            <default-package-name>JOOservices Laravel Logging</default-package-name>
+        </api>
+    </version>
+    <template name="default" />
+</phpdocumentor>

@@ -1,6 +1,6 @@
 # Copilot Instructions For `jooservices/laravel-logging`
 
-Read [AGENTS.md](../../AGENTS.md) as the primary repository policy.
+Read [AGENTS.md](../AGENTS.md) as the primary repository policy.
 
 Before generating or editing code:
 

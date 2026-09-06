@@ -1,0 +1,7 @@
+# zizmor policy for jooservices/laravel-logging workflows.
+# Version tags (@v7) are acceptable; SHA pinning is enforced selectively.
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": ref-pin

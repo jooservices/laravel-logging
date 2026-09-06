@@ -188,7 +188,7 @@ final class ExportActivityLogsCommand extends Command
      */
     private function writeJsonLine(mixed $handle, ActivityLogRecord $record): void
     {
-        fwrite($handle, json_encode($record->toArray(), JSON_THROW_ON_ERROR).PHP_EOL);
+        fwrite($handle, json_encode($record->toArray(), JSON_THROW_ON_ERROR) . PHP_EOL);
     }
 
     /**

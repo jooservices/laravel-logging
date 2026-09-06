@@ -1,12 +1,2 @@
 includes:
-    - vendor/larastan/larastan/extension.neon
-    - vendor/phpstan/phpstan-strict-rules/rules.neon
-
-parameters:
-    level: 6
-    paths:
-        - src
-    scanFiles:
-        - tests/Stubs/AuditedTestModel.php
-    tmpDir: build/phpstan
-    treatPhpDocTypesAsCertain: false
+    - phpstan.neon.dist

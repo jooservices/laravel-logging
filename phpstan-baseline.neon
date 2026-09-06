@@ -1,0 +1,493 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\ActivityLogManager\:\:adapters\(\) return type has no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/ActivityLogManager.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\ActivityLogManager\:\:register\(\) has parameter \$adapter with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/ActivityLogManager.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\ActivityLogManager\:\:replace\(\) has parameter \$adapter with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/ActivityLogManager.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Adapters\\BaseLogAdapter\:\:payloadToArray\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Adapters/BaseLogAdapter.php
+
+		-
+			message: '#^Property JOOservices\\LaravelLogging\\Adapters\\BaseLogAdapter\:\:\$context \(array\<string, mixed\>\) does not accept array\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: src/Adapters/BaseLogAdapter.php
+
+		-
+			message: '#^Property JOOservices\\LaravelLogging\\Adapters\\BaseLogAdapter\:\:\$properties \(array\<string, mixed\>\) does not accept array\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: src/Adapters/BaseLogAdapter.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 4
+			path: src/Console/Commands/ActivityLogDoctorCommand.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\|bool\|float\|int\|string\|null given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: src/Console/Commands/ActivityLogDoctorCommand.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|bool\|float\|int\|string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Console/Commands/ActivityLogDoctorCommand.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\|bool\|float\|int\|string\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: src/Console/Commands/ActivityLogDoctorCommand.php
+
+		-
+			message: '#^Cannot cast array\|bool\|float\|int\|string\|null to string\.$#'
+			identifier: cast.string
+			count: 9
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\|bool\|float\|int\|string\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|bool\|float\|int\|string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, array\|bool\|float\|int\|string\|null given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Parameter \#1 \$filename of function file_exists expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Parameter \#1 \$filename of function fopen expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Parameter \#1 \$path of function dirname expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Parameter \#1 \$time of static method Carbon\\CarbonImmutable\:\:parse\(\) expects Carbon\\Month\|Carbon\\WeekDay\|DateTimeInterface\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Parameter \#2 \$format of method JOOservices\\LaravelLogging\\Console\\Commands\\ExportActivityLogsCommand\:\:writeExport\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Part \$output \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: src/Console/Commands/ExportActivityLogsCommand.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 1
+			path: src/Console/Commands/InstallActivityLogIndexesCommand.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: src/Console/Commands/InstallActivityLogIndexesCommand.php
+
+		-
+			message: '#^Cannot cast array\|bool\|float\|int\|string\|null to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: src/Console/Commands/MakeLogAdapterCommand.php
+
+		-
+			message: '#^Parameter \#2 \$replace of function str_replace expects array\<string\>\|string, array\<int, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Console/Commands/MakeLogAdapterCommand.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Binary operation "\." between ''Unknown activity…'' and array\|bool\|float\|int\|string\|null results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Binary operation "\." between mixed and ''\]\.'' results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Cannot call method cursor\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Cannot cast array\|bool\|float\|int\|string\|null to string\.$#'
+			identifier: cast.string
+			count: 4
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 3
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Console\\Commands\\PruneActivityLogsCommand\:\:plan\(\) should return array\{string\|null, Carbon\\CarbonImmutable\}\|null but returns array\{mixed, Carbon\\CarbonImmutable\}\.$#'
+			identifier: return.type
+			count: 2
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, array\|bool\|float\|int\|string\|null given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 2
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\|bool\|float\|int\|string\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 3
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Parameter \#1 \$time of static method Carbon\\CarbonImmutable\:\:parse\(\) expects Carbon\\Month\|Carbon\\WeekDay\|DateTimeInterface\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Parameter \#1 \$type of method JOOservices\\LaravelLogging\\Console\\Commands\\PruneActivityLogsCommand\:\:retentionDays\(\) expects string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Console/Commands/PruneActivityLogsCommand.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Contracts\\ActivityLogManagerInterface\:\:adapters\(\) return type has no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/Contracts/ActivityLogManagerInterface.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Contracts\\ActivityLogManagerInterface\:\:register\(\) has parameter \$adapter with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/Contracts/ActivityLogManagerInterface.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Contracts\\ActivityLogManagerInterface\:\:replace\(\) has parameter \$adapter with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/Contracts/ActivityLogManagerInterface.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Contracts\\DomainLogMapperRegistryInterface\:\:register\(\) has parameter \$mapper with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/Contracts/DomainLogMapperRegistryInterface.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Contracts\\DomainLogMapperRegistryInterface\:\:replace\(\) has parameter \$mapper with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/Contracts/DomainLogMapperRegistryInterface.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Contracts\\LogAdapterRegistryInterface\:\:all\(\) return type has no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/Contracts/LogAdapterRegistryInterface.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Contracts\\LogAdapterRegistryInterface\:\:register\(\) has parameter \$adapter with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/Contracts/LogAdapterRegistryInterface.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Contracts\\LogAdapterRegistryInterface\:\:replace\(\) has parameter \$adapter with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/Contracts/LogAdapterRegistryInterface.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: src/DTO/LogActorData.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: src/DTO/LogSubjectData.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\DomainLogMapperRegistry\:\:key\(\) has parameter \$mapper with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/DomainLogMapperRegistry.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\DomainLogMapperRegistry\:\:register\(\) has parameter \$mapper with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/DomainLogMapperRegistry.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\DomainLogMapperRegistry\:\:replace\(\) has parameter \$mapper with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/DomainLogMapperRegistry.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\DomainLogMapperRegistry\:\:resolve\(\) has parameter \$mapper with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/DomainLogMapperRegistry.php
+
+		-
+			message: '#^Property JOOservices\\LaravelLogging\\DomainLogMapperRegistry\:\:\$mappers type has no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/DomainLogMapperRegistry.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: src/Http/Middleware/LogHttpRequest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 3
+			path: src/LaravelLoggingServiceProvider.php
+
+		-
+			message: '#^Parameter \#1 \$config of class JOOservices\\LaravelLogging\\Services\\ActivityLogPayloadLimiter constructor expects array\{enabled\?\: bool, max_string_length\?\: int, max_array_items\?\: int, max_depth\?\: int, max_document_bytes\?\: int, truncate_marker\?\: string\}, array\<string, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/LaravelLoggingServiceProvider.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\LogAdapterRegistry\:\:__construct\(\) has parameter \$adapters with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/LogAdapterRegistry.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\LogAdapterRegistry\:\:all\(\) return type has no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/LogAdapterRegistry.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\LogAdapterRegistry\:\:register\(\) has parameter \$adapter with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/LogAdapterRegistry.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\LogAdapterRegistry\:\:replace\(\) has parameter \$adapter with no signature specified for callable\.$#'
+			identifier: missingType.callable
+			count: 1
+			path: src/LogAdapterRegistry.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Models\\ActivityLogRecord\:\:getConnectionName\(\) should return string\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/ActivityLogRecord.php
+
+		-
+			message: '#^Method JOOservices\\LaravelLogging\\Models\\ActivityLogRecord\:\:getTable\(\) should return string but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/ActivityLogRecord.php
+
+		-
+			message: '#^Parameter \#1 \$payload of method JOOservices\\LaravelLogging\\Services\\ActivityLogPayloadLimiter\:\:limitDocumentSize\(\) expects array\<string, mixed\>, array\<mixed, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Services/ActivityLogPayloadLimiter.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: src/Support/ActivityLogAggregator.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: src/Support/LogIdentity.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$aggregate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/OperationalFlowTest.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Connection\:\:getCollection\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/OperationalFlowTest.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, Closure\(MongoDB\\Model\\IndexInfo\)\: array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Integration/OperationalFlowTest.php
+
+		-
+			message: '#^Parameter \#1 \$iterator of function iterator_to_array expects iterable, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Integration/OperationalFlowTest.php
+
+		-
+			message: '#^Parameter \#1 \$type of method JOOservices\\LaravelLogging\\Contracts\\LogAdapterInterface\:\:onExternal\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Integration/OperationalFlowTest.php
+
+		-
+			message: '#^Access to an undefined property JOOservices\\LaravelLogging\\Models\\ActivityLogRecord\:\:\$site_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/PersistenceTest.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Connection\:\:getCollection\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/PersistenceTest.php
+
+		-
+			message: '#^Call to an undefined method JOOservices\\LaravelLogging\\Contracts\\ActivityLogAdapterInterface\:\:tenantId\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Integration/PersistenceTest.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Connection\:\:getCollection\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: tests/Integration/QueryAndCommandTest.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 2
+			path: tests/Integration/QueryAndCommandTest.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type mixed\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: tests/Integration/QueryAndCommandTest.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Connection\:\:getCollection\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/TestCase.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$subject\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/AdapterDataTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''JOOservices\\\\LaravelLogging\\\\Contracts\\\\LogAdapterInterface'' and JOOservices\\LaravelLogging\\Adapters\\ActivityLogAdapter will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Unit/AdapterDataTest.php
+
+		-
+			message: '#^Parameter \#1 \$type of method JOOservices\\LaravelLogging\\Contracts\\LogAdapterInterface\:\:onExternal\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/AdapterDataTest.php
+
+		-
+			message: '#^Parameter \#2 \$array of method PHPUnit\\Framework\\Assert\:\:assertArrayNotHasKey\(\) expects array\<mixed\>\|ArrayAccess\<\(int\|string\), mixed\>, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/AdapterDataTest.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 1
+			path: tests/Unit/DefaultLogContextResolverTest.php
+
+		-
+			message: '#^Call to an undefined method JOOservices\\LaravelLogging\\ActivityLogManager\:\:activity\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Unit/RegistryManagerTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''JOOservices\\\\LaravelLogging\\\\ActivityLogQuery'' and JOOservices\\LaravelLogging\\ActivityLogQuery will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Unit/RegistryManagerTest.php

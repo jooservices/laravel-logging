@@ -22,7 +22,9 @@ final class StoreActivityLogJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public function __construct(public readonly ActivityLogData $data) {}
+    public function __construct(public readonly ActivityLogData $data)
+    {
+    }
 
     public function handle(LogStoreInterface $store): void
     {

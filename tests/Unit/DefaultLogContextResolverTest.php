@@ -41,6 +41,17 @@ final class DefaultLogContextResolverTest extends TestCase
         $this->assertSame('abc123def456', $resolved['trace_id']);
         $this->assertSame('10.0.0.1', $resolved['ip_address']);
         $this->assertSame('GET', $resolved['context']['request']['method']);
+        $this->assertSame('http://localhost/demo', $resolved['context']['request']['url']);
+    }
+
+    public function test_resolve_request_url_excludes_query_string(): void
+    {
+        $request = Request::create('/callback?code=secret-token&state=xyz', 'GET');
+
+        $resolved = (new DefaultLogContextResolver($this->app))->resolve($request);
+
+        $this->assertSame('http://localhost/callback', $resolved['context']['request']['url']);
+        $this->assertStringNotContainsString('secret-token', (string) $resolved['context']['request']['url']);
     }
 
     public function test_resolve_uses_explicit_request_and_correlation_headers(): void

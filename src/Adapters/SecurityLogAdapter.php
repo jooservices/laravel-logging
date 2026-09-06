@@ -16,7 +16,7 @@ final class SecurityLogAdapter extends BaseLogAdapter implements SecurityLogAdap
 
     protected ?string $level = 'notice';
 
-    public function loginSucceeded(Authenticatable|Model $actor): static
+    public function loginSucceeded(Authenticatable | Model $actor): static
     {
         return $this->level('info')->action('login.succeeded')->by($actor);
     }
@@ -26,37 +26,37 @@ final class SecurityLogAdapter extends BaseLogAdapter implements SecurityLogAdap
         return $this->level('warning')->action('login.failed')->properties(['identifier' => $identifier]);
     }
 
-    public function logout(Authenticatable|Model|null $actor = null): static
+    public function logout(Authenticatable | Model | null $actor = null): static
     {
         return $this->level('info')->action('logout')->by($actor);
     }
 
-    public function passwordChanged(Authenticatable|Model $actor): static
+    public function passwordChanged(Authenticatable | Model $actor): static
     {
         return $this->action('password.changed')->by($actor);
     }
 
-    public function twoFactorEnabled(Authenticatable|Model $actor): static
+    public function twoFactorEnabled(Authenticatable | Model $actor): static
     {
         return $this->action('2fa.enabled')->by($actor);
     }
 
-    public function twoFactorDisabled(Authenticatable|Model $actor): static
+    public function twoFactorDisabled(Authenticatable | Model $actor): static
     {
         return $this->action('2fa.disabled')->by($actor);
     }
 
-    public function apiKeyCreated(Authenticatable|Model $actor, Model|string|null $apiKey = null): static
+    public function apiKeyCreated(Authenticatable | Model $actor, Model | string | null $apiKey = null): static
     {
         return $this->action('api_key.created')->by($actor)->on($apiKey);
     }
 
-    public function apiKeyDeleted(Authenticatable|Model $actor, Model|string|null $apiKey = null): static
+    public function apiKeyDeleted(Authenticatable | Model $actor, Model | string | null $apiKey = null): static
     {
         return $this->action('api_key.deleted')->by($actor)->on($apiKey);
     }
 
-    public function permissionChanged(Authenticatable|Model $actor, Model|string|null $subject = null): static
+    public function permissionChanged(Authenticatable | Model $actor, Model | string | null $subject = null): static
     {
         return $this->action('permission.changed')->by($actor)->on($subject);
     }

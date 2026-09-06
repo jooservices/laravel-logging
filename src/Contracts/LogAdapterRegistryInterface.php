@@ -8,13 +8,13 @@ use BackedEnum;
 
 interface LogAdapterRegistryInterface
 {
-    public function register(string|BackedEnum $name, string|callable $adapter): void;
+    public function register(string | BackedEnum $name, string | callable $adapter): void;
 
-    public function replace(string|BackedEnum $name, string|callable $adapter): void;
+    public function replace(string | BackedEnum $name, string | callable $adapter): void;
 
-    public function resolve(string|BackedEnum $name): LogAdapterInterface;
+    public function resolve(string | BackedEnum $name): LogAdapterInterface;
 
-    public function has(string|BackedEnum $name): bool;
+    public function has(string | BackedEnum $name): bool;
 
     /**
      * @return array<string, string|callable>

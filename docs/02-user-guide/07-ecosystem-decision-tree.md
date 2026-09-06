@@ -67,5 +67,6 @@ can jump from a UI timeline entry to ops logs or compliance events.
 ## Related docs
 
 - [Adapter cookbook](08-adapter-cookbook.md)
+- [Cookbook examples](../03-examples/01-cookbook.md)
 - [laravel-activities](https://github.com/jooservices/laravel-activities)
 - [laravel-events](https://github.com/jooservices/laravel-events)

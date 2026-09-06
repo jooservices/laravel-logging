@@ -9,6 +9,7 @@ use JOOservices\LaravelLogging\Adapters\ActivityLogAdapter;
 use JOOservices\LaravelLogging\Adapters\AuditLogAdapter;
 use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterRegistryInterface;
+use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
 use JOOservices\LaravelLogging\Exceptions\AdapterAlreadyRegisteredException;
 use JOOservices\LaravelLogging\Exceptions\AdapterNotRegisteredException;
 use JOOservices\LaravelLogging\Exceptions\InvalidLogAdapterException;
@@ -57,7 +58,7 @@ final class RegistryManagerTest extends TestCase
     public function test_wrong_adapter_type_throws(): void
     {
         $registry = new LogAdapterRegistry($this->app);
-        $registry->register('wrong', fn (): stdClass => new stdClass);
+        $registry->register('wrong', fn(): stdClass => new stdClass());
 
         $this->expectException(InvalidLogAdapterException::class);
         $registry->resolve('wrong');
@@ -67,7 +68,11 @@ final class RegistryManagerTest extends TestCase
     {
         /** @var LogAdapterRegistryInterface $registry */
         $registry = $this->app->make(LogAdapterRegistryInterface::class);
-        $manager = new ActivityLogManager($registry, $this->app->make(ActivityLogRepository::class));
+        $manager = new ActivityLogManager(
+            $registry,
+            $this->app->make(ActivityLogRepository::class),
+            $this->app->make(LogStoreInterface::class),
+        );
 
         $this->assertInstanceOf(LogAdapterInterface::class, $manager->activity());
 
@@ -93,7 +98,11 @@ final class RegistryManagerTest extends TestCase
     {
         /** @var LogAdapterRegistryInterface $registry */
         $registry = $this->app->make(LogAdapterRegistryInterface::class);
-        $manager = new ActivityLogManager($registry, $this->app->make(ActivityLogRepository::class));
+        $manager = new ActivityLogManager(
+            $registry,
+            $this->app->make(ActivityLogRepository::class),
+            $this->app->make(LogStoreInterface::class),
+        );
 
         $this->assertTrue($manager->hasAdapter('activity'));
         $this->assertArrayHasKey('activity', $manager->adapters());

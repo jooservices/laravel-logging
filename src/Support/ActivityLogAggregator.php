@@ -11,7 +11,9 @@ use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 final class ActivityLogAggregator
 {
     /** @param Builder<Model> $builder */
-    public function __construct(private readonly Builder $builder) {}
+    public function __construct(private readonly Builder $builder)
+    {
+    }
 
     /**
      * @return array<string, int>
