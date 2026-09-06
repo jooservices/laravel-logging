@@ -151,6 +151,32 @@ final class SanitizationAndPayloadLimiterTest extends TestCase
         $this->assertSame(10, $payload['count']);
     }
 
+    public function test_payload_limiter_preserves_structural_top_level_strings(): void
+    {
+        $limiter = new ActivityLogPayloadLimiter([
+            'enabled' => true,
+            'max_string_length' => 5,
+            'max_array_items' => 200,
+            'max_depth' => 8,
+            'max_document_bytes' => 10000,
+            'truncate_marker' => '[truncated]',
+        ]);
+
+        $payload = $limiter->limit([
+            'uuid' => '11111111-1111-1111-1111-111111111111',
+            'action' => 'payload.guarded',
+            'occurred_at' => '2026-01-01T00:00:00+00:00',
+            'message' => 'abcdefghij',
+            'properties' => ['description' => 'abcdefghij'],
+        ]);
+
+        $this->assertSame('11111111-1111-1111-1111-111111111111', $payload['uuid']);
+        $this->assertSame('payload.guarded', $payload['action']);
+        $this->assertSame('2026-01-01T00:00:00+00:00', $payload['occurred_at']);
+        $this->assertSame('abcde[truncated]', $payload['message']);
+        $this->assertSame('abcde[truncated]', $payload['properties']['description']);
+    }
+
     public function test_payload_limiter_preserves_batch_id_when_truncating_items(): void
     {
         $limiter = new ActivityLogPayloadLimiter([

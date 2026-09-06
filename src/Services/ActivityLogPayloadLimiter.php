@@ -9,6 +9,33 @@ use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
 final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterface
 {
     /**
+     * Top-level identity / timing fields must never be string-truncated.
+     *
+     * @var list<string>
+     */
+    private const STRUCTURAL_KEYS = [
+        'uuid',
+        'type',
+        'adapter',
+        'level',
+        'action',
+        'actor_type',
+        'actor_id',
+        'subject_type',
+        'subject_id',
+        'causer_type',
+        'causer_id',
+        'source',
+        'source_type',
+        'request_id',
+        'correlation_id',
+        'trace_id',
+        'ip_address',
+        'tenant_id',
+        'occurred_at',
+    ];
+
+    /**
      * Prefer keeping these keys when max_array_items truncates associative bags.
      *
      * @var list<string>
@@ -69,11 +96,25 @@ final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterf
                 break;
             }
 
-            $limited[$key] = $this->limitValue($item, $depth + 1);
+            $limited[$key] = $this->limitKeyedValue($key, $item, $depth);
             $count++;
         }
 
         return $limited;
+    }
+
+    private function limitKeyedValue(mixed $key, mixed $item, int $depth): mixed
+    {
+        if (
+            $depth === 0
+            && is_string($key)
+            && in_array($key, self::STRUCTURAL_KEYS, true)
+            && is_string($item)
+        ) {
+            return $item;
+        }
+
+        return $this->limitValue($item, $depth + 1);
     }
 
     /**
