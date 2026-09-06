@@ -7,6 +7,7 @@ namespace JOOservices\LaravelLogging\Tests\Unit;
 use ArrayIterator;
 use Illuminate\Contracts\Support\Arrayable;
 use JOOservices\LaravelLogging\Adapters\AuditLogAdapter;
+use JOOservices\LaravelLogging\Adapters\SystemLogAdapter;
 use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
 use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
@@ -14,9 +15,12 @@ use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
 use JOOservices\LaravelLogging\DTO\ActivityLogData;
 use JOOservices\LaravelLogging\Services\DefaultLogSanitizer;
 use JOOservices\LaravelLogging\Support\AuditableAttributes;
+use JOOservices\LaravelLogging\Support\PromotedFieldPromoter;
+use JOOservices\LaravelLogging\Tests\Stubs\TestBackedString;
 use JOOservices\LaravelLogging\Tests\Stubs\TestModel;
 use JOOservices\LaravelLogging\Tests\TestCase;
 use JsonSerializable;
+use RuntimeException;
 
 /**
  * Coverage for edge paths that do not require a live MongoDB connection.
@@ -194,5 +198,66 @@ final class CoverageBoostTest extends TestCase
         $contents = (string) file_get_contents($path);
         $this->assertStringContainsString('CoverageOpsAdapter', $contents);
         @unlink($path);
+    }
+
+    public function test_base_adapter_enums_helpers_and_system_failure_context(): void
+    {
+        config()->set('app.debug', true);
+
+        $data = $this->auditAdapter()
+            ->type(TestBackedString::Audit)
+            ->level(TestBackedString::Error)
+            ->action(TestBackedString::Boom)
+            ->message('hello')
+            ->source(TestBackedString::Cli)
+            ->byGuest()
+            ->toData();
+
+        $this->assertSame('audit', $data->type);
+        $this->assertSame('error', $data->level);
+        $this->assertSame('boom', $data->action);
+        $this->assertSame('hello', $data->message);
+        $this->assertSame('cli', $data->source);
+        $this->assertSame('guest', $data->actorType);
+
+        $system = new SystemLogAdapter(
+            $this->app->make(LogStoreInterface::class),
+            $this->app->make(LogSanitizerInterface::class),
+            $this->app->make(ActivityLogPayloadLimiterInterface::class),
+            $this->app->make(LogContextResolverInterface::class),
+        );
+
+        $failed = $system
+            ->commandFailed('demo:run', new RuntimeException(str_repeat('x', 520)))
+            ->toData();
+
+        $this->assertSame('command.failed', $failed->action);
+        $this->assertSame('error', $failed->level);
+        $this->assertIsArray($failed->context['exception']);
+        $exception = $failed->context['exception'];
+        $this->assertIsString($exception['message']);
+        $this->assertStringEndsWith('[truncated]', $exception['message']);
+        $this->assertArrayHasKey('file', $exception);
+        $this->assertArrayHasKey('line', $exception);
+    }
+
+    public function test_promoted_fields_skip_reserved_targets(): void
+    {
+        config()->set('laravel-logging.promoted_fields', [
+            'action' => 'context.should_not_overwrite',
+            'batch_id' => 'context.batch',
+            '' => 'context.ignored',
+        ]);
+
+        $document = PromotedFieldPromoter::apply([
+            'action' => 'keep-me',
+            'context' => [
+                'should_not_overwrite' => 'nope',
+                'batch' => 'b-1',
+            ],
+        ]);
+
+        $this->assertSame('keep-me', $document['action']);
+        $this->assertSame('b-1', $document['batch_id']);
     }
 }
