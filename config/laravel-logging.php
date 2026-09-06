@@ -87,12 +87,18 @@ return [
         'sensitive_keys' => [
             'password',
             'password_confirmation',
+            'remember_token',
+            'two_factor_secret',
+            'two_factor_recovery_codes',
+            'current_password',
             'token',
             'access_token',
+            'accessToken',
             'refresh_token',
             'secret',
             'client_secret',
             'api_key',
+            'apiKey',
             'apikey',
             'authorization',
             'cookie',
@@ -100,6 +106,12 @@ return [
             'x-api-key',
         ],
         'sensitive_patterns' => [],
+        // Value patterns applied to string leaves (Bearer tokens, JWT, PEM blocks).
+        'value_patterns' => [
+            '/(?i)^Bearer\s+[A-Za-z0-9\-._~+\/=]+$/',
+            '/(?i)^eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/',
+            '/-----BEGIN [A-Z ]*PRIVATE KEY-----/',
+        ],
     ],
 
     'limits' => [
@@ -139,12 +151,20 @@ return [
         'enabled' => (bool) env('ACTIVITY_LOG_HTTP_ENABLED', false),
         'action' => 'http.request',
         'level' => 'info',
-        'queue' => false,
+        'queue' => (bool) env('ACTIVITY_LOG_HTTP_QUEUE', true),
         'ignore_paths' => [
             'up',
             'health',
             'horizon*',
             'telescope*',
+            'login',
+            'logout',
+            'register',
+            'password/*',
+            'reset-password*',
+            'forgot-password*',
+            'sanctum/*',
+            'oauth/*',
         ],
     ],
 ];

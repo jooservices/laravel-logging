@@ -7,6 +7,41 @@ namespace JOOservices\LaravelLogging\Support;
 final class PromotedFieldPromoter
 {
     /**
+     * Top-level fields that must never be overwritten by promotion.
+     *
+     * @var list<string>
+     */
+    private const RESERVED = [
+        'uuid',
+        'type',
+        'adapter',
+        'level',
+        'action',
+        'message',
+        'actor_type',
+        'actor_id',
+        'subject_type',
+        'subject_id',
+        'causer_type',
+        'causer_id',
+        'source',
+        'source_type',
+        'request_id',
+        'correlation_id',
+        'trace_id',
+        'ip_address',
+        'user_agent',
+        'tenant_id',
+        'properties',
+        'context',
+        'changes',
+        'occurred_at',
+        'created_at',
+        'updated_at',
+        '_id',
+    ];
+
+    /**
      * @param  array<string, mixed>  $document
      * @return array<string, mixed>
      */
@@ -17,6 +52,10 @@ final class PromotedFieldPromoter
 
         foreach ($mappings as $targetField => $sourcePath) {
             if (! is_string($targetField) || ! is_string($sourcePath) || $sourcePath === '') {
+                continue;
+            }
+
+            if (in_array($targetField, self::RESERVED, true)) {
                 continue;
             }
 

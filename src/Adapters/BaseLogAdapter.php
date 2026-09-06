@@ -23,6 +23,7 @@ use JOOservices\LaravelLogging\DTO\LogSubjectData;
 use JOOservices\LaravelLogging\Exceptions\InvalidLogDataException;
 use JOOservices\LaravelLogging\Jobs\StoreActivityLogJob;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
+use JOOservices\LaravelLogging\Support\LogIdentity;
 use JsonSerializable;
 use Throwable;
 
@@ -113,14 +114,14 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
     public function by(Model | Authenticatable | string | null $actor): static
     {
-        $this->actor = LogActorData::fromTarget($actor);
+        $this->actor = LogIdentity::actorData($actor);
 
         return $this;
     }
 
     public function byExternal(string $type, string | int | null $id = null): static
     {
-        $this->actor = LogActorData::external($type, $id);
+        $this->actor = LogIdentity::externalActor($type, $id);
 
         return $this;
     }
@@ -137,28 +138,28 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
     public function on(Model | string | null $subject): static
     {
-        $this->subject = LogSubjectData::fromTarget($subject);
+        $this->subject = LogIdentity::subjectData($subject);
 
         return $this;
     }
 
     public function onExternal(string $type, string | int | null $id = null): static
     {
-        $this->subject = LogSubjectData::external($type, $id);
+        $this->subject = LogIdentity::externalSubject($type, $id);
 
         return $this;
     }
 
     public function causedBy(Model | Authenticatable | string | null $causer): static
     {
-        $this->causer = LogActorData::fromTarget($causer);
+        $this->causer = LogIdentity::actorData($causer);
 
         return $this;
     }
 
     public function causedByExternal(string $type, string | int | null $id = null): static
     {
-        $this->causer = LogActorData::external($type, $id);
+        $this->causer = LogIdentity::externalActor($type, $id);
 
         return $this;
     }
@@ -276,9 +277,9 @@ abstract class BaseLogAdapter implements LogAdapterInterface
             throw new InvalidLogDataException('Activity log action is required before saving.');
         }
 
-        $properties = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->properties));
-        $context = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->context));
-        $changes = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->changes));
+        $properties = $this->properties;
+        $context = $this->context;
+        $changes = $this->changes;
 
         return new ActivityLogData(
             uuid: (string) Str::uuid(),
@@ -310,9 +311,13 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
     public function dispatch(): void
     {
-        $data = $this->toData();
+        // Prepare before queue so Redis/SQS/failed-job payloads are already redacted.
+        $data = $this->store->prepare($this->toData());
+        $sync = $this->syncDispatch;
+        $queue = $this->queueName;
+        $this->resetAfterPersist();
 
-        if ($this->syncDispatch) {
+        if ($sync) {
             $this->store->record($data);
 
             return;
@@ -320,14 +325,17 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
         $dispatch = StoreActivityLogJob::dispatch($data);
 
-        if ($this->queueName !== null) {
-            $dispatch->onQueue($this->queueName);
+        if ($queue !== null) {
+            $dispatch->onQueue($queue);
         }
     }
 
     public function save(): ActivityLogRecord
     {
-        return $this->store->record($this->toData());
+        $record = $this->store->record($this->toData());
+        $this->resetAfterPersist();
+
+        return $record;
     }
 
     protected function enumValue(string | BackedEnum $value): string
@@ -364,18 +372,56 @@ abstract class BaseLogAdapter implements LogAdapterInterface
     }
 
     /**
+     * Clear mutable builder state after persist so accidental reuse cannot leak bags.
+     * Prefer a fresh adapter from the manager/facade for each log write.
+     */
+    protected function resetAfterPersist(): void
+    {
+        $this->level = null;
+        $this->action = null;
+        $this->message = null;
+        $this->actor = null;
+        $this->subject = null;
+        $this->causer = null;
+        $this->source = null;
+        $this->sourceType = null;
+        $this->requestId = null;
+        $this->correlationId = null;
+        $this->traceId = null;
+        $this->ipAddress = null;
+        $this->userAgent = null;
+        $this->tenantId = null;
+        $this->properties = [];
+        $this->context = [];
+        $this->changes = [];
+        $this->occurredAt = null;
+        $this->queueName = null;
+        $this->syncDispatch = false;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function exceptionContext(Throwable $exception): array
     {
-        return [
+        $message = $exception->getMessage();
+        if (mb_strlen($message) > 500) {
+            $message = mb_substr($message, 0, 500) . '[truncated]';
+        }
+
+        $context = [
             'exception' => [
                 'class' => $exception::class,
-                'message' => $exception->getMessage(),
+                'message' => $message,
                 'code' => $exception->getCode(),
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
             ],
         ];
+
+        if ((bool) config('app.debug', false)) {
+            $context['exception']['file'] = $exception->getFile();
+            $context['exception']['line'] = $exception->getLine();
+        }
+
+        return $context;
     }
 }

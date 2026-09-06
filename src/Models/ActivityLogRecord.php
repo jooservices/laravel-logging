@@ -48,13 +48,17 @@ class ActivityLogRecord extends Model
         'occurred_at' => 'datetime',
     ];
 
-    public function getConnectionName()
+    public function getConnectionName(): ?string
     {
-        return config('laravel-logging.connection', 'mongodb');
+        $connection = config('laravel-logging.connection', 'mongodb');
+
+        return is_string($connection) ? $connection : 'mongodb';
     }
 
-    public function getTable()
+    public function getTable(): string
     {
-        return config('laravel-logging.collection', 'activity_logs');
+        $collection = config('laravel-logging.collection', 'activity_logs');
+
+        return is_string($collection) ? $collection : 'activity_logs';
     }
 }

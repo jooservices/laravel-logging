@@ -47,7 +47,17 @@ abstract class TestCase extends Orchestra
         try {
             DB::connection('mongodb')->getCollection('activity_logs')->countDocuments([], ['limit' => 1]);
         } catch (Throwable $exception) {
-            $this->markTestSkipped('MongoDB integration tests require a running MongoDB server at ' . env('MONGODB_URI', 'mongodb://localhost:27017') . '. ' . $exception->getMessage());
+            $uri = env('MONGODB_URI');
+            $message = 'MongoDB integration tests require a running MongoDB server at '
+                . (is_string($uri) && $uri !== '' ? $uri : 'mongodb://localhost:27017')
+                . '. ' . $exception->getMessage();
+
+            // Explicit URI or CI must fail — do not skip and report green.
+            if ((is_string($uri) && $uri !== '') || (bool) env('CI', false)) {
+                $this->fail($message);
+            }
+
+            $this->markTestSkipped($message);
         }
     }
 }

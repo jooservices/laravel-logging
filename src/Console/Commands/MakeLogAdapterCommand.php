@@ -21,6 +21,12 @@ final class MakeLogAdapterCommand extends GeneratorCommand
 
     protected function getStub(): string
     {
+        $published = base_path('stubs/log-adapter.stub');
+
+        if (is_file($published)) {
+            return $published;
+        }
+
         return dirname(__DIR__, 3) . '/stubs/log-adapter.stub';
     }
 
@@ -47,7 +53,7 @@ final class MakeLogAdapterCommand extends GeneratorCommand
     protected function buildClass($name): string
     {
         $stub = parent::buildClass($name);
-        $type = (string) $this->option('type');
+        $type = $this->safeType(is_string($this->option('type')) ? $this->option('type') : 'ops');
         $class = class_basename($name);
         $adapterKey = Str::of($class)
             ->replaceEnd('Adapter', '')
@@ -56,8 +62,45 @@ final class MakeLogAdapterCommand extends GeneratorCommand
 
         return str_replace(
             ['{{ type }}', '{{ adapter }}'],
-            [$type !== '' ? $type : 'ops', $adapterKey !== '' ? $adapterKey : 'custom'],
+            [$type, $adapterKey !== '' ? $adapterKey : 'custom'],
             $stub,
         );
+    }
+
+    public function handle()
+    {
+        $result = parent::handle();
+
+        if ($result === false) {
+            return $result;
+        }
+
+        $name = $this->argument('name');
+        if (! is_string($name) || $name === '') {
+            return $result;
+        }
+
+        $class = class_basename($name);
+        $adapterKey = Str::of($class)
+            ->replaceEnd('Adapter', '')
+            ->snake()
+            ->toString();
+        $adapterKey = $adapterKey !== '' ? $adapterKey : 'custom';
+        $fqcn = $this->qualifyClass($name);
+
+        $this->newLine();
+        $this->components->info('Register the adapter in config/laravel-logging.php:');
+        $this->line("    '{$adapterKey}' => \\{$fqcn}::class,");
+
+        return $result;
+    }
+
+    private function safeType(string $type): string
+    {
+        if ($type === '' || preg_match('/^[A-Za-z0-9._-]+$/', $type) !== 1) {
+            return 'ops';
+        }
+
+        return $type;
     }
 }

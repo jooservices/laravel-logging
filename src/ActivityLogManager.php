@@ -31,7 +31,7 @@ final class ActivityLogManager implements ActivityLogManagerInterface
 
     public function query(): ActivityLogQuery
     {
-        return new ActivityLogQuery($this->repository);
+        return new ActivityLogQuery($this->repository->fresh());
     }
 
     public function records(): ActivityLogQuery

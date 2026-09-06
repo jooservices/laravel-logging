@@ -29,7 +29,7 @@ final class DefaultLogContextResolverTest extends TestCase
     public function test_resolve_generates_request_id_and_reads_traceparent(): void
     {
         $request = Request::create('/demo', 'GET', [], [], [], [
-            'HTTP_TRACEPARENT' => '00-abc123def456-00f067aa0ba902b7-00',
+            'HTTP_TRACEPARENT' => '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00',
             'HTTP_USER_AGENT' => 'ResolverTest',
             'REMOTE_ADDR' => '10.0.0.1',
         ]);
@@ -38,7 +38,7 @@ final class DefaultLogContextResolverTest extends TestCase
 
         $this->assertNotEmpty($resolved['request_id']);
         $this->assertSame($resolved['request_id'], $resolved['correlation_id']);
-        $this->assertSame('abc123def456', $resolved['trace_id']);
+        $this->assertSame('4bf92f3577b34da6a3ce929d0e0e4736', $resolved['trace_id']);
         $this->assertSame('10.0.0.1', $resolved['ip_address']);
         $this->assertSame('GET', $resolved['context']['request']['method']);
         $this->assertSame('http://localhost/demo', $resolved['context']['request']['url']);
@@ -54,7 +54,7 @@ final class DefaultLogContextResolverTest extends TestCase
         $this->assertStringNotContainsString('secret-token', (string) $resolved['context']['request']['url']);
     }
 
-    public function test_resolve_uses_explicit_request_and_correlation_headers(): void
+    public function test_resolve_stores_inbound_headers_as_external_ids_only(): void
     {
         $request = Request::create('/demo', 'POST', [], [], [], [
             'HTTP_X_REQUEST_ID' => 'req-42',
@@ -63,8 +63,28 @@ final class DefaultLogContextResolverTest extends TestCase
 
         $resolved = (new DefaultLogContextResolver($this->app))->resolve($request);
 
-        $this->assertSame('req-42', $resolved['request_id']);
-        $this->assertSame('corr-99', $resolved['correlation_id']);
+        $this->assertNotSame('req-42', $resolved['request_id']);
+        $this->assertNotSame('corr-99', $resolved['correlation_id']);
+        $this->assertSame($resolved['request_id'], $resolved['correlation_id']);
+        $this->assertSame('req-42', $resolved['context']['request']['external_request_id']);
+        $this->assertSame('corr-99', $resolved['context']['request']['external_correlation_id']);
         $this->assertNull($resolved['trace_id']);
+    }
+
+    public function test_resolve_reuses_request_scoped_ids_and_rejects_poisoned_headers(): void
+    {
+        $request = Request::create('/demo', 'GET', [], [], [], [
+            'HTTP_X_REQUEST_ID' => str_repeat('a', 200),
+            'HTTP_TRACEPARENT' => 'not-a-traceparent',
+        ]);
+        $resolver = new DefaultLogContextResolver($this->app);
+
+        $first = $resolver->resolve($request);
+        $second = $resolver->resolve($request);
+
+        $this->assertSame($first['request_id'], $second['request_id']);
+        $this->assertSame($first['correlation_id'], $second['correlation_id']);
+        $this->assertArrayNotHasKey('external_request_id', $first['context']['request']);
+        $this->assertNull($first['trace_id']);
     }
 }
