@@ -24,6 +24,7 @@ use JOOservices\LaravelLogging\Contracts\SystemLogAdapterInterface;
  * @method static LogAdapterInterface adapter(string|BackedEnum $name)
  * @method static ActivityLogQuery query()
  * @method static ActivityLogQuery records()
+ * @method static \Illuminate\Support\Collection recordMany(array $records)
  * @method static void register(string|BackedEnum $name, string|callable $adapter)
  * @method static void replace(string|BackedEnum $name, string|callable $adapter)
  * @method static bool hasAdapter(string|BackedEnum $name)

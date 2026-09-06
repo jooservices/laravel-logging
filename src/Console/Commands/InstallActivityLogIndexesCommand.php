@@ -42,7 +42,7 @@ final class InstallActivityLogIndexesCommand extends Command
      */
     public static function expectedIndexes(): array
     {
-        return array_merge([
+        $indexes = [
             ['keys' => ['uuid' => 1], 'options' => ['unique' => true]],
             ['keys' => ['type' => 1], 'options' => []],
             ['keys' => ['adapter' => 1], 'options' => []],
@@ -61,6 +61,21 @@ final class InstallActivityLogIndexesCommand extends Command
             ['keys' => ['type' => 1, 'action' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['subject_type' => 1, 'subject_id' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['actor_type' => 1, 'actor_id' => 1, 'occurred_at' => -1], 'options' => []],
-        ], PromotedFieldPromoter::indexDefinitions());
+            ['keys' => ['context.batch_id' => 1], 'options' => []],
+            ['keys' => ['context.workflow_id' => 1], 'options' => []],
+        ];
+
+        if ((bool) config('laravel-logging.ttl.enabled', false)) {
+            $days = max(1, (int) config('laravel-logging.ttl.expire_after_days', 365));
+            $indexes[] = [
+                'keys' => ['occurred_at' => 1],
+                'options' => [
+                    'name' => 'ttl_occurred_at',
+                    'expireAfterSeconds' => $days * 86400,
+                ],
+            ];
+        }
+
+        return array_merge($indexes, PromotedFieldPromoter::indexDefinitions());
     }
 }

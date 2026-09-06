@@ -20,9 +20,10 @@ final class LogAdapterRegistry implements LogAdapterRegistryInterface
     public function __construct(
         private readonly Container $container,
         private array $adapters = [],
-    ) {}
+    ) {
+    }
 
-    public function register(string|BackedEnum $name, string|callable $adapter): void
+    public function register(string | BackedEnum $name, string | callable $adapter): void
     {
         $name = $this->normalize($name);
 
@@ -33,12 +34,12 @@ final class LogAdapterRegistry implements LogAdapterRegistryInterface
         $this->adapters[$name] = $adapter;
     }
 
-    public function replace(string|BackedEnum $name, string|callable $adapter): void
+    public function replace(string | BackedEnum $name, string | callable $adapter): void
     {
         $this->adapters[$this->normalize($name)] = $adapter;
     }
 
-    public function resolve(string|BackedEnum $name): LogAdapterInterface
+    public function resolve(string | BackedEnum $name): LogAdapterInterface
     {
         $normalized = $this->normalize($name);
 
@@ -58,7 +59,7 @@ final class LogAdapterRegistry implements LogAdapterRegistryInterface
         return $resolved;
     }
 
-    public function has(string|BackedEnum $name): bool
+    public function has(string | BackedEnum $name): bool
     {
         return array_key_exists($this->normalize($name), $this->adapters);
     }
@@ -68,7 +69,7 @@ final class LogAdapterRegistry implements LogAdapterRegistryInterface
         return $this->adapters;
     }
 
-    private function normalize(string|BackedEnum $name): string
+    private function normalize(string | BackedEnum $name): string
     {
         $name = $name instanceof BackedEnum ? (string) $name->value : $name;
 

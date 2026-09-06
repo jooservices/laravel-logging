@@ -13,9 +13,10 @@ final class LogActorData extends Dto
     public function __construct(
         public readonly ?string $type,
         public readonly ?string $id,
-    ) {}
+    ) {
+    }
 
-    public static function fromTarget(Model|Authenticatable|string|null $target): self
+    public static function fromTarget(Model | Authenticatable | string | null $target): self
     {
         if ($target === null) {
             return new self(null, null);
@@ -32,7 +33,7 @@ final class LogActorData extends Dto
         return new self($target::class, self::stringKey($target->getAuthIdentifier()));
     }
 
-    public static function external(string $type, string|int|null $id = null): self
+    public static function external(string $type, string | int | null $id = null): self
     {
         return new self($type, $id === null ? null : (string) $id);
     }

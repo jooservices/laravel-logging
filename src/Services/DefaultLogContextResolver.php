@@ -11,7 +11,9 @@ use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 
 final class DefaultLogContextResolver implements LogContextResolverInterface
 {
-    public function __construct(private readonly Application $app) {}
+    public function __construct(private readonly Application $app)
+    {
+    }
 
     public function resolve(?Request $request = null): array
     {

@@ -21,13 +21,13 @@ interface AuditLogAdapterInterface extends LogAdapterInterface
     /**
      * @param  array<string, mixed>|Arrayable<string, mixed>|JsonSerializable  $changes
      */
-    public function changes(array|Arrayable|JsonSerializable $changes): static;
+    public function changes(array | Arrayable | JsonSerializable $changes): static;
 
     /**
      * @param  array<string, mixed>|Arrayable<string, mixed>  $before
      * @param  array<string, mixed>|Arrayable<string, mixed>  $after
      */
-    public function changesFrom(array|Arrayable $before, array|Arrayable $after): static;
+    public function changesFrom(array | Arrayable $before, array | Arrayable $after): static;
 
     /**
      * @param  array<int, string>  $fields

@@ -5,20 +5,29 @@ declare(strict_types=1);
 namespace JOOservices\LaravelLogging\Contracts;
 
 use BackedEnum;
+use Illuminate\Support\Collection;
+use JOOservices\LaravelLogging\DTO\ActivityLogData;
+use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 
 interface ActivityLogManagerInterface
 {
-    public function adapter(string|BackedEnum $name): LogAdapterInterface;
+    public function adapter(string | BackedEnum $name): LogAdapterInterface;
 
     public function query(): \JOOservices\LaravelLogging\ActivityLogQuery;
 
     public function records(): \JOOservices\LaravelLogging\ActivityLogQuery;
 
-    public function register(string|BackedEnum $name, string|callable $adapter): void;
+    /**
+     * @param  list<ActivityLogData>  $records
+     * @return Collection<int, ActivityLogRecord>
+     */
+    public function recordMany(array $records): Collection;
 
-    public function replace(string|BackedEnum $name, string|callable $adapter): void;
+    public function register(string | BackedEnum $name, string | callable $adapter): void;
 
-    public function hasAdapter(string|BackedEnum $name): bool;
+    public function replace(string | BackedEnum $name, string | callable $adapter): void;
+
+    public function hasAdapter(string | BackedEnum $name): bool;
 
     /**
      * @return array<string, string|callable>

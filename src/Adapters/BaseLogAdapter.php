@@ -69,7 +69,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
     /** @var array<string, mixed> */
     protected array $changes = [];
 
-    protected DateTimeInterface|string|null $occurredAt = null;
+    protected DateTimeInterface | string | null $occurredAt = null;
 
     protected ?string $queueName = null;
 
@@ -80,23 +80,24 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         protected readonly LogSanitizerInterface $sanitizer,
         protected readonly ActivityLogPayloadLimiterInterface $payloadLimiter,
         protected readonly LogContextResolverInterface $contextResolver,
-    ) {}
+    ) {
+    }
 
-    public function type(string|BackedEnum $type): static
+    public function type(string | BackedEnum $type): static
     {
         $this->type = $this->enumValue($type);
 
         return $this;
     }
 
-    public function level(string|BackedEnum $level): static
+    public function level(string | BackedEnum $level): static
     {
         $this->level = $this->enumValue($level);
 
         return $this;
     }
 
-    public function action(string|BackedEnum $action): static
+    public function action(string | BackedEnum $action): static
     {
         $this->action = $this->enumValue($action);
 
@@ -110,14 +111,14 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this;
     }
 
-    public function by(Model|Authenticatable|string|null $actor): static
+    public function by(Model | Authenticatable | string | null $actor): static
     {
         $this->actor = LogActorData::fromTarget($actor);
 
         return $this;
     }
 
-    public function byExternal(string $type, string|int|null $id = null): static
+    public function byExternal(string $type, string | int | null $id = null): static
     {
         $this->actor = LogActorData::external($type, $id);
 
@@ -134,56 +135,56 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this->by('guest');
     }
 
-    public function on(Model|string|null $subject): static
+    public function on(Model | string | null $subject): static
     {
         $this->subject = LogSubjectData::fromTarget($subject);
 
         return $this;
     }
 
-    public function onExternal(string $type, string|int|null $id = null): static
+    public function onExternal(string $type, string | int | null $id = null): static
     {
         $this->subject = LogSubjectData::external($type, $id);
 
         return $this;
     }
 
-    public function causedBy(Model|Authenticatable|string|null $causer): static
+    public function causedBy(Model | Authenticatable | string | null $causer): static
     {
         $this->causer = LogActorData::fromTarget($causer);
 
         return $this;
     }
 
-    public function causedByExternal(string $type, string|int|null $id = null): static
+    public function causedByExternal(string $type, string | int | null $id = null): static
     {
         $this->causer = LogActorData::external($type, $id);
 
         return $this;
     }
 
-    public function source(string|BackedEnum|null $source): static
+    public function source(string | BackedEnum | null $source): static
     {
         $this->source = $source === null ? null : $this->enumValue($source);
 
         return $this;
     }
 
-    public function sourceType(string|BackedEnum|null $sourceType): static
+    public function sourceType(string | BackedEnum | null $sourceType): static
     {
         $this->sourceType = $sourceType === null ? null : $this->enumValue($sourceType);
 
         return $this;
     }
 
-    public function properties(array|Arrayable|JsonSerializable $properties): static
+    public function properties(array | Arrayable | JsonSerializable $properties): static
     {
         $this->properties = array_replace_recursive($this->properties, $this->payloadToArray($properties));
 
         return $this;
     }
 
-    public function context(array|Arrayable|JsonSerializable $context): static
+    public function context(array | Arrayable | JsonSerializable $context): static
     {
         $this->context = array_replace_recursive($this->context, $this->payloadToArray($context));
 
@@ -225,28 +226,28 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this;
     }
 
-    public function tenantId(string|int|null $tenantId): static
+    public function tenantId(string | int | null $tenantId): static
     {
         $this->tenantId = $tenantId === null ? null : (string) $tenantId;
 
         return $this;
     }
 
-    public function batchId(string|int $batchId): static
+    public function batchId(string | int $batchId): static
     {
         $this->context['batch_id'] = (string) $batchId;
 
         return $this;
     }
 
-    public function workflowId(string|int $workflowId): static
+    public function workflowId(string | int $workflowId): static
     {
         $this->context['workflow_id'] = (string) $workflowId;
 
         return $this;
     }
 
-    public function occurredAt(DateTimeInterface|string|null $occurredAt): static
+    public function occurredAt(DateTimeInterface | string | null $occurredAt): static
     {
         $this->occurredAt = $occurredAt;
 
@@ -329,7 +330,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this->store->record($this->toData());
     }
 
-    protected function enumValue(string|BackedEnum $value): string
+    protected function enumValue(string | BackedEnum $value): string
     {
         return $value instanceof BackedEnum ? (string) $value->value : $value;
     }
@@ -338,7 +339,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
      * @param  array<string, mixed>|Arrayable<string, mixed>|JsonSerializable  $payload
      * @return array<string, mixed>
      */
-    protected function payloadToArray(array|Arrayable|JsonSerializable $payload): array
+    protected function payloadToArray(array | Arrayable | JsonSerializable $payload): array
     {
         if ($payload instanceof Arrayable) {
             /** @var array<string, mixed> */

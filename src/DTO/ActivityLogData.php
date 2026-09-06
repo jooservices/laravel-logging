@@ -38,8 +38,9 @@ final class ActivityLogData extends Dto
         public readonly array $properties,
         public readonly array $context,
         public readonly array $changes,
-        public readonly DateTimeInterface|string|null $occurredAt,
-    ) {}
+        public readonly DateTimeInterface | string | null $occurredAt,
+    ) {
+    }
 
     /**
      * @return array<string, mixed>

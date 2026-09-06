@@ -45,14 +45,14 @@ final class AuditLogAdapter extends BaseLogAdapter implements AuditLogAdapterInt
         return $this->action('restored')->on($model)->changes(['after' => $model->getAttributes()]);
     }
 
-    public function changes(array|Arrayable|JsonSerializable $changes): static
+    public function changes(array | Arrayable | JsonSerializable $changes): static
     {
         $this->setChanges($this->payloadToArray($changes));
 
         return $this;
     }
 
-    public function changesFrom(array|Arrayable $before, array|Arrayable $after): static
+    public function changesFrom(array | Arrayable $before, array | Arrayable $after): static
     {
         $before = $this->payloadToArray($before);
         $after = $this->payloadToArray($after);

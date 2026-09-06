@@ -163,7 +163,7 @@ final class PruneActivityLogsCommand extends Command
         }
 
         if ($rule['action_prefix'] !== null) {
-            $query->where('action', 'like', $rule['action_prefix'].'%');
+            $query->where('action', 'like', $rule['action_prefix'] . '%');
         }
 
         $matched = (clone $query)->toBase()->count();
@@ -185,10 +185,10 @@ final class PruneActivityLogsCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->line('Matched: '.$matched);
-        $this->line('Deleted: '.$deleted);
-        $this->line('Mode: '.$mode);
-        $this->line('Passes: '.$passes);
+        $this->line('Matched: ' . $matched);
+        $this->line('Deleted: ' . $deleted);
+        $this->line('Mode: ' . $mode);
+        $this->line('Passes: ' . $passes);
 
         return self::SUCCESS;
     }
@@ -226,7 +226,7 @@ final class PruneActivityLogsCommand extends Command
     private function validateType(): ?string
     {
         return $this->filledOption('type') && ! in_array((string) $this->option('type'), $this->knownTypes(), true)
-            ? 'Unknown activity log type ['.$this->option('type').'].'
+            ? 'Unknown activity log type [' . $this->option('type') . '].'
             : null;
     }
 
@@ -365,9 +365,9 @@ final class PruneActivityLogsCommand extends Command
             return;
         }
 
-        $this->line('Matched: '.$matched);
-        $this->line('Deleted: '.$deleted);
-        $this->line('Mode: '.$mode);
-        $this->line('Cutoff: '.($result['cutoff'] ?? 'none'));
+        $this->line('Matched: ' . $matched);
+        $this->line('Deleted: ' . $deleted);
+        $this->line('Mode: ' . $mode);
+        $this->line('Cutoff: ' . ($result['cutoff'] ?? 'none'));
     }
 }

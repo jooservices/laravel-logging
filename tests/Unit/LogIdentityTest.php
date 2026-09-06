@@ -19,8 +19,7 @@ final class LogIdentityTest extends TestCase
 
     public function test_actor_resolves_authenticatable_identifier(): void
     {
-        $user = new class implements Authenticatable
-        {
+        $user = new class implements Authenticatable {
             public function getAuthIdentifierName(): string
             {
                 return 'id';
@@ -46,7 +45,9 @@ final class LogIdentityTest extends TestCase
                 return null;
             }
 
-            public function setRememberToken($value): void {}
+            public function setRememberToken($value): void
+            {
+            }
 
             public function getRememberTokenName(): string
             {

@@ -32,41 +32,41 @@ final class ActivityLogQuery
         $this->builder = clone $this->builder;
     }
 
-    public function type(string|BackedEnum $type): self
+    public function type(string | BackedEnum $type): self
     {
         return $this->whereEnum('type', $type);
     }
 
-    public function adapter(string|BackedEnum $adapter): self
+    public function adapter(string | BackedEnum $adapter): self
     {
         return $this->whereEnum('adapter', $adapter);
     }
 
-    public function level(string|BackedEnum $level): self
+    public function level(string | BackedEnum $level): self
     {
         return $this->whereEnum('level', $level);
     }
 
-    public function action(string|BackedEnum $action): self
+    public function action(string | BackedEnum $action): self
     {
         return $this->whereEnum('action', $action);
     }
 
-    public function forSubject(Model|string $subject, string|int|null $id = null): self
+    public function forSubject(Model | string $subject, string | int | null $id = null): self
     {
         $identity = LogIdentity::subject($subject, $id);
 
         return $this->identity('subject', $identity['type'], $identity['id']);
     }
 
-    public function byActor(Model|Authenticatable|string $actor, string|int|null $id = null): self
+    public function byActor(Model | Authenticatable | string $actor, string | int | null $id = null): self
     {
         $identity = LogIdentity::actor($actor, $id);
 
         return $this->identity('actor', $identity['type'], $identity['id']);
     }
 
-    public function causedBy(Model|Authenticatable|string $causer, string|int|null $id = null): self
+    public function causedBy(Model | Authenticatable | string $causer, string | int | null $id = null): self
     {
         $identity = LogIdentity::actor($causer, $id);
 
@@ -88,19 +88,60 @@ final class ActivityLogQuery
         return $this->where('trace_id', $traceId);
     }
 
-    public function tenantId(string|int $tenantId): self
+    public function tenantId(string | int $tenantId): self
     {
         return $this->where('tenant_id', (string) $tenantId);
     }
 
     public function actionPrefix(string $prefix): self
     {
-        $this->builder->where('action', 'like', $prefix.'%');
+        $this->builder->where('action', 'like', $prefix . '%');
 
         return $this;
     }
 
-    public function between(DateTimeInterface|string $from, DateTimeInterface|string $to): self
+    public function batchId(string | int $batchId): self
+    {
+        return $this->where('context.batch_id', (string) $batchId);
+    }
+
+    public function workflowId(string | int $workflowId): self
+    {
+        return $this->where('context.workflow_id', (string) $workflowId);
+    }
+
+    /**
+     * Filter by a promoted top-level field configured in laravel-logging.promoted_fields.
+     */
+    public function wherePromoted(string $field, mixed $value): self
+    {
+        return $this->where($field, $value);
+    }
+
+    /**
+     * Jump to records sharing correlation_id or context.batch_id with $record.
+     */
+    public function relatedTo(ActivityLogRecord $record): self
+    {
+        $correlationId = $record->correlation_id;
+        $batchId = data_get($record->context, 'batch_id');
+
+        if (is_string($correlationId) && $correlationId !== '') {
+            $this->builder->where('correlation_id', $correlationId);
+
+            return $this;
+        }
+
+        if (is_string($batchId) && $batchId !== '') {
+            return $this->batchId($batchId);
+        }
+
+        $this->builder->where('_id', $record->getKey());
+
+        return $this;
+    }
+
+    public function between(DateTimeInterface | string $from, DateTimeInterface | string $to): self
     {
         $this->builder->where('occurred_at', '>=', $this->date($from));
         $this->builder->where('occurred_at', '<=', $this->date($to));
@@ -108,12 +149,12 @@ final class ActivityLogQuery
         return $this;
     }
 
-    public function since(DateTimeInterface|string $from): self
+    public function since(DateTimeInterface | string $from): self
     {
         return $this->where('occurred_at', '>=', $this->date($from));
     }
 
-    public function until(DateTimeInterface|string $to): self
+    public function until(DateTimeInterface | string $to): self
     {
         return $this->where('occurred_at', '<=', $this->date($to));
     }
@@ -216,7 +257,7 @@ final class ActivityLogQuery
         }
     }
 
-    private function whereEnum(string $field, string|BackedEnum $value): self
+    private function whereEnum(string $field, string | BackedEnum $value): self
     {
         return $this->where($field, $value instanceof BackedEnum ? (string) $value->value : $value);
     }
@@ -242,7 +283,7 @@ final class ActivityLogQuery
         return $this;
     }
 
-    private function date(DateTimeInterface|string $date): DateTimeInterface
+    private function date(DateTimeInterface | string $date): DateTimeInterface
     {
         return is_string($date) ? CarbonImmutable::parse($date) : $date;
     }

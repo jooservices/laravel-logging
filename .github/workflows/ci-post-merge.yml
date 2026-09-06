@@ -1,0 +1,198 @@
+# Dedicated CI for jooservices/laravel-logging — GitHub-hosted runners
+# Post-merge sanity on master/develop heads. Full PR gate lives in ci.yml.
+name: CI post-merge
+
+on:
+  push:
+    branches: [master, develop]
+
+concurrency:
+  group: ci-post-merge-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PHP_VERSION: '8.5'
+  MONGODB_URI: mongodb://127.0.0.1:27017
+  MONGODB_DATABASE: jooservices_logging_ci
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, json, mongodb
+          coverage: none
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v4
+
+      - name: Composer validate
+        run: composer validate --strict
+
+  test:
+    name: Test (${{ matrix.name }})
+    needs: [validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: Laravel 12
+            laravel: '12'
+            testbench: '^10.0'
+            coverage: true
+          - name: Laravel 13
+            laravel: '13'
+            testbench: '^11.0'
+            coverage: false
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, json, mongodb
+          coverage: ${{ matrix.coverage && 'pcov' || 'none' }}
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v4
+
+      - name: Require Laravel ${{ matrix.laravel }}
+        run: |
+          composer require --no-update "laravel/framework:^${{ matrix.laravel }}.0"
+          composer require --no-update --dev "orchestra/testbench:${{ matrix.testbench }}"
+          composer update --prefer-dist --no-interaction
+
+      - name: Run tests with coverage
+        if: matrix.coverage
+        run: |
+          mkdir -p build/coverage
+          composer test -- --coverage-clover=build/coverage/clover-Laravel${{ matrix.laravel }}.xml
+
+      - name: Run tests
+        if: ${{ !matrix.coverage }}
+        run: composer test -- --no-coverage
+
+      - name: Upload coverage artifact
+        if: matrix.coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-post-merge-Laravel${{ matrix.laravel }}
+          path: build/coverage/clover-Laravel${{ matrix.laravel }}.xml
+          if-no-files-found: error
+
+  coverage:
+    name: Coverage upload
+    needs: [test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, json, mongodb
+          coverage: none
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-post-merge-*
+          path: build/coverage/matrix
+          merge-multiple: true
+
+      - name: Enforce coverage threshold
+        run: |
+          set -euo pipefail
+          clover="build/coverage/matrix/clover-Laravel12.xml"
+          php scripts/check-coverage.php 90 "$clover"
+          mkdir -p build/coverage
+          cp "$clover" build/coverage/clover-combined.xml
+
+      - name: Upload to Codecov
+        if: env.CODECOV_TOKEN != ''
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: build/coverage/clover-combined.xml
+          fail_ci_if_error: true
+          verbose: true
+
+      - name: Skip Codecov
+        if: env.CODECOV_TOKEN == ''
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: echo "CODECOV_TOKEN is not configured; skipping Codecov upload."
+
+      - name: Resolve SonarQube host URL
+        if: env.SONAR_TOKEN != ''
+        id: sonar-config
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          set -euo pipefail
+          host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
+          host_url="${host_url%/}"
+          case "${host_url}" in
+            http://*|https://*) ;;
+            *) host_url="https://${host_url}" ;;
+          esac
+          if [[ ! "${host_url}" =~ ^https?://[^[:space:]/]+ ]]; then
+            echo "SONAR_HOST_URL must be a valid HTTP(S) URL"
+            exit 1
+          fi
+          echo "host_url=${host_url}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload SonarQube analysis
+        if: env.SONAR_TOKEN != ''
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ steps.sonar-config.outputs.host_url }}
+        uses: SonarSource/sonarqube-scan-action@v8
+        with:
+          args: >
+            -Dsonar.php.coverage.reportPaths=build/coverage/clover-combined.xml
+
+      - name: Skip SonarQube
+        if: env.SONAR_TOKEN == ''
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: echo "SONAR_TOKEN is not configured; skipping SonarQube analysis."

@@ -90,15 +90,13 @@ final class OperationalFlowTest extends TestCase
 
     public function test_domain_mapper_registry_persists_mapped_event_through_facade(): void
     {
-        $event = new class
-        {
+        $event = new class {
             public string $aggregate = 'invoice';
         };
 
         /** @var DomainLogMapperRegistryInterface $registry */
         $registry = $this->app->make(DomainLogMapperRegistryInterface::class);
-        $registry->register(fn (): DomainLogMapperInterface => new class implements DomainLogMapperInterface
-        {
+        $registry->register(fn(): DomainLogMapperInterface => new class implements DomainLogMapperInterface {
             public function supports(object $event): bool
             {
                 return property_exists($event, 'aggregate');
@@ -129,7 +127,7 @@ final class OperationalFlowTest extends TestCase
 
         $indexes = iterator_to_array(DB::connection('mongodb')->getCollection('activity_logs')->listIndexes());
         $keys = array_map(
-            static fn (IndexInfo $index): array => $index->getKey(),
+            static fn(IndexInfo $index): array => $index->getKey(),
             $indexes,
         );
 

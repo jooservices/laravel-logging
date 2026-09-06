@@ -12,5 +12,6 @@ final class ActivityLogStoreFailed
     public function __construct(
         public readonly ActivityLogData $data,
         public readonly ?Throwable $exception,
-    ) {}
+    ) {
+    }
 }

@@ -29,11 +29,11 @@ $explicitFiles = [
 $errors = [];
 
 foreach ($explicitFiles as $file) {
-    checkFile($root.'/'.$file, $file, $errors);
+    checkFile($root . '/' . $file, $file, $errors);
 }
 
 foreach ($targets as $directory => $extensions) {
-    $path = $root.'/'.$directory;
+    $path = $root . '/' . $directory;
 
     if (! is_dir($path)) {
         continue;
@@ -98,7 +98,7 @@ function checkFile(string $path, string $relative, array &$errors): void
         json_decode($contents, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $errors[] = "{$relative} contains invalid JSON: ".json_last_error_msg().'.';
+            $errors[] = "{$relative} contains invalid JSON: " . json_last_error_msg() . '.';
         }
     }
 
@@ -113,7 +113,7 @@ function checkFile(string $path, string $relative, array &$errors): void
     if (in_array($extension, ['json', 'php', 'md', 'mdc', 'yml', 'yaml'], true)) {
         foreach ($lines ?: [] as $number => $line) {
             if (strlen($line) > 240) {
-                $errors[] = "{$relative}:".($number + 1).' is longer than 240 characters.';
+                $errors[] = "{$relative}:" . ($number + 1) . ' is longer than 240 characters.';
             }
         }
     }

@@ -108,4 +108,41 @@ return [
         'max_document_bytes' => 524288,
         'truncate_marker' => '[truncated]',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | TTL indexes (optional MongoDB expireAfterSeconds)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, activity-log:indexes creates a TTL index on occurred_at.
+    | Prefer command-based prune for type-aware retention; use TTL only for
+    | coarse maximum lifetime of the collection.
+    |
+    */
+    'ttl' => [
+        'enabled' => (bool) env('ACTIVITY_LOG_TTL_ENABLED', false),
+        'expire_after_days' => (int) env('ACTIVITY_LOG_TTL_DAYS', 365),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | HTTP request logging middleware (opt-in)
+    |--------------------------------------------------------------------------
+    |
+    | Register JOOservices\LaravelLogging\Http\Middleware\LogHttpRequest in
+    | your application middleware stack. Disabled by default.
+    |
+    */
+    'http' => [
+        'enabled' => (bool) env('ACTIVITY_LOG_HTTP_ENABLED', false),
+        'action' => 'http.request',
+        'level' => 'info',
+        'queue' => false,
+        'ignore_paths' => [
+            'up',
+            'health',
+            'horizon*',
+            'telescope*',
+        ],
+    ],
 ];

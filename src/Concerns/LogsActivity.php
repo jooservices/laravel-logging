@@ -11,12 +11,12 @@ trait LogsActivity
 {
     public static function bootLogsActivity(): void
     {
-        static::created(fn (self $model): mixed => $model->writeActivityLog('created'));
-        static::updated(fn (self $model): mixed => $model->writeActivityLog('updated'));
-        static::deleted(fn (self $model): mixed => $model->writeActivityLog('deleted'));
+        static::created(fn(self $model): mixed => $model->writeActivityLog('created'));
+        static::updated(fn(self $model): mixed => $model->writeActivityLog('updated'));
+        static::deleted(fn(self $model): mixed => $model->writeActivityLog('deleted'));
 
         if (method_exists(static::class, 'restored')) {
-            static::restored(fn (self $model): mixed => $model->writeActivityLog('restored'));
+            static::restored(fn(self $model): mixed => $model->writeActivityLog('restored'));
         }
     }
 
@@ -37,7 +37,7 @@ trait LogsActivity
         }
 
         return ActivityLog::audit()
-            ->action($options->actionPrefix.'.'.$event)
+            ->action($options->actionPrefix . '.' . $event)
             ->on($this)
             ->only($options->only ?? array_keys($after + $before))
             ->except($options->except)

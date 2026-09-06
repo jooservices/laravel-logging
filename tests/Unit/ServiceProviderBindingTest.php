@@ -42,5 +42,6 @@ final class ServiceProviderBindingTest extends TestCase
         $this->assertContains('activity-log:doctor', $commands);
         $this->assertContains('activity-log:prune', $commands);
         $this->assertContains('activity-log:export', $commands);
+        $this->assertContains('make:log-adapter', $commands);
     }
 }
