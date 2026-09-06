@@ -84,7 +84,9 @@ final class DefaultLogContextResolverTest extends TestCase
 
         $this->assertSame($first['request_id'], $second['request_id']);
         $this->assertSame($first['correlation_id'], $second['correlation_id']);
-        $this->assertArrayNotHasKey('external_request_id', $first['context']['request']);
+        $requestContext = $first['context']['request'] ?? [];
+        $this->assertIsArray($requestContext);
+        $this->assertArrayNotHasKey('external_request_id', $requestContext);
         $this->assertNull($first['trace_id']);
     }
 }

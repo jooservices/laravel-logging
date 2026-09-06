@@ -32,12 +32,12 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
             return $payload;
         }
 
-        return $this->sanitizeArray($this->stringKeyed($payload));
+        return $this->sanitizeArray($payload);
     }
 
     /**
-     * @param  array<string, mixed>  $payload
-     * @return array<string, mixed>
+     * @param  array<array-key, mixed>  $payload
+     * @return array<array-key, mixed>
      */
     private function sanitizeArray(array $payload): array
     {
@@ -57,7 +57,7 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
     private function sanitizeValue(mixed $value): mixed
     {
         if (is_array($value)) {
-            return $this->sanitizeArray($this->stringKeyed($value));
+            return $this->sanitizeArray($value);
         }
 
         if (is_object($value)) {
@@ -65,15 +65,15 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
                 $serialized = $value->jsonSerialize();
 
                 return is_array($serialized)
-                    ? $this->sanitizeArray($this->stringKeyed($serialized))
+                    ? $this->sanitizeArray($serialized)
                     : $this->sanitizeValue($serialized);
             }
 
             if ($value instanceof Traversable) {
-                return $this->sanitizeArray($this->stringKeyed(iterator_to_array($value)));
+                return $this->sanitizeArray(iterator_to_array($value));
             }
 
-            return $this->sanitizeArray($this->stringKeyed(get_object_vars($value)));
+            return $this->sanitizeArray(get_object_vars($value));
         }
 
         if (is_string($value) && $this->matchesValuePattern($value)) {
@@ -81,21 +81,6 @@ final class DefaultLogSanitizer implements LogSanitizerInterface
         }
 
         return $value;
-    }
-
-    /**
-     * @param  array<mixed>  $payload
-     * @return array<string, mixed>
-     */
-    private function stringKeyed(array $payload): array
-    {
-        $result = [];
-
-        foreach ($payload as $key => $item) {
-            $result[is_string($key) ? $key : (string) $key] = $item;
-        }
-
-        return $result;
     }
 
     private function isSensitiveKey(string $key): bool

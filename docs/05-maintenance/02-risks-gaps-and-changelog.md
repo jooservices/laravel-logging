@@ -11,8 +11,9 @@
   only — prefer type-aware prune for audit vs system retention.
 - Export is command-based, streams JSONL/CSV, and refuses to overwrite files
   unless `--force` is used.
-- Sanitization and payload limiting run in the store for every write path
-  (including `recordMany`), and again in adapters for nested bags.
+- Sanitization and payload limiting run in the store `prepare()` choke point for
+  every write path (including `recordMany` and queued `dispatch()`). Adapter
+  `toData()` stays raw.
 - `ActivityLogRepository` is internal and not a supported public extension point in v1.
 - Requires `jooservices/dto` ^3 and `jooservices/laravel-repository` ^4; Laravel
   `^12|^13` is supported.

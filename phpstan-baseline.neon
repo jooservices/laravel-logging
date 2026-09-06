@@ -313,12 +313,6 @@ parameters:
 			path: src/LogAdapterRegistry.php
 
 		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Repositories/ActivityLogRepository.php
-
-		-
 			message: '#^Parameter \#1 \$payload of method JOOservices\\LaravelLogging\\Services\\ActivityLogPayloadLimiter\:\:limitDocumentSize\(\) expects array\<string, mixed\>, array\<mixed, mixed\> given\.$#'
 			identifier: argument.type
 			count: 1
@@ -423,12 +417,6 @@ parameters:
 		-
 			message: '#^Casting to string something that''s already string\.$#'
 			identifier: cast.useless
-			count: 1
-			path: tests/Unit/DefaultLogContextResolverTest.php
-
-		-
-			message: '#^Parameter \#2 \$array of method PHPUnit\\Framework\\Assert\:\:assertArrayNotHasKey\(\) expects array\<mixed\>\|ArrayAccess\<\(int\|string\), mixed\>, mixed given\.$#'
-			identifier: argument.type
 			count: 1
 			path: tests/Unit/DefaultLogContextResolverTest.php
 

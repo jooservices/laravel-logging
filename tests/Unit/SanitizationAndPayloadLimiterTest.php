@@ -52,6 +52,24 @@ final class SanitizationAndPayloadLimiterTest extends TestCase
         $this->assertSame('keep', $payload['notation']);
     }
 
+    public function test_sanitizer_preserves_list_integer_keys(): void
+    {
+        $sanitizer = new DefaultLogSanitizer(
+            keys: ['token'],
+            replacement: '[redacted]',
+        );
+
+        $payload = $sanitizer->sanitize([
+            'items' => ['one', 'two', 'three'],
+        ]);
+
+        $this->assertIsArray($payload['items']);
+        /** @var array<array-key, mixed> $items */
+        $items = $payload['items'];
+        $this->assertSame([0, 1, 2], array_keys($items));
+        $this->assertSame(['one', 'two', 'three'], $items);
+    }
+
     public function test_sanitizer_redacts_camel_case_and_value_patterns(): void
     {
         $sanitizer = new DefaultLogSanitizer(

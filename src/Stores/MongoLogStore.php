@@ -114,7 +114,26 @@ final class MongoLogStore implements LogStoreInterface
             return $document;
         }
 
-        return $limited;
+        return $this->stringKeyedDocument($limited);
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $document
+     * @return array<string, mixed>
+     */
+    private function stringKeyedDocument(array $document): array
+    {
+        $result = [];
+
+        foreach ($document as $key => $value) {
+            if (! is_string($key)) {
+                continue;
+            }
+
+            $result[$key] = $value;
+        }
+
+        return $result;
     }
 
     private function clampScalar(mixed $value, ?int $max = null): mixed

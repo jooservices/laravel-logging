@@ -161,7 +161,10 @@ final class ActivityLogRepository extends EloquentRepository implements CrudRepo
         $repo = $this->fresh()->filter($filters);
 
         try {
-            $deleted = (int) $repo->getQuery()->delete();
+            $rawDeleted = $repo->getQuery()->delete();
+            $deleted = is_int($rawDeleted)
+                ? $rawDeleted
+                : (is_numeric($rawDeleted) ? (int) $rawDeleted : 0);
         } finally {
             $repo->query = null;
         }

@@ -101,6 +101,8 @@ final class ActivityLogAggregator
             $counts[$key] = is_numeric($rawCount) ? (int) $rawCount : 0;
         }
 
+        ksort($counts);
+
         return $counts;
     }
 
@@ -126,6 +128,8 @@ final class ActivityLogAggregator
 
             $counts[$key] = ($counts[$key] ?? 0) + 1;
         }
+
+        ksort($counts);
 
         return $counts;
     }
