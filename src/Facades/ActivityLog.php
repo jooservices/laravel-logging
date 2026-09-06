@@ -24,10 +24,11 @@ use JOOservices\LaravelLogging\Contracts\SystemLogAdapterInterface;
  * @method static LogAdapterInterface adapter(string|BackedEnum $name)
  * @method static ActivityLogQuery query()
  * @method static ActivityLogQuery records()
- * @method static void register(string|BackedEnum $name, string|callable $adapter)
- * @method static void replace(string|BackedEnum $name, string|callable $adapter)
+ * @method static \Illuminate\Support\Collection<int, \JOOservices\LaravelLogging\Models\ActivityLogRecord> recordMany(list<\JOOservices\LaravelLogging\DTO\ActivityLogData> $records)
+ * @method static void register(string|BackedEnum $name, class-string|callable(): LogAdapterInterface $adapter)
+ * @method static void replace(string|BackedEnum $name, class-string|callable(): LogAdapterInterface $adapter)
  * @method static bool hasAdapter(string|BackedEnum $name)
- * @method static array<string, string|callable> adapters()
+ * @method static array<string, class-string|callable(): LogAdapterInterface> adapters()
  *
  * @see Manager
  */

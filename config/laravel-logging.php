@@ -39,6 +39,8 @@ return [
     |
     */
     'promoted_fields' => [
+        'batch_id' => 'context.batch_id',
+        'workflow_id' => 'context.workflow_id',
         // 'site_id' => 'properties.site_id',
     ],
 
@@ -85,12 +87,18 @@ return [
         'sensitive_keys' => [
             'password',
             'password_confirmation',
+            'remember_token',
+            'two_factor_secret',
+            'two_factor_recovery_codes',
+            'current_password',
             'token',
             'access_token',
+            'accessToken',
             'refresh_token',
             'secret',
             'client_secret',
             'api_key',
+            'apiKey',
             'apikey',
             'authorization',
             'cookie',
@@ -98,6 +106,12 @@ return [
             'x-api-key',
         ],
         'sensitive_patterns' => [],
+        // Value patterns applied to string leaves (Bearer tokens, JWT, PEM blocks).
+        'value_patterns' => [
+            '/(?i)^Bearer\s+[A-Za-z0-9\-._~+\/=]+$/',
+            '/(?i)^eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/',
+            '/-----BEGIN [A-Z ]*PRIVATE KEY-----/',
+        ],
     ],
 
     'limits' => [
@@ -107,5 +121,50 @@ return [
         'max_depth' => 8,
         'max_document_bytes' => 524288,
         'truncate_marker' => '[truncated]',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | TTL indexes (optional MongoDB expireAfterSeconds)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, activity-log:indexes creates a TTL index on occurred_at.
+    | Prefer command-based prune for type-aware retention; use TTL only for
+    | coarse maximum lifetime of the collection.
+    |
+    */
+    'ttl' => [
+        'enabled' => (bool) env('ACTIVITY_LOG_TTL_ENABLED', false),
+        'expire_after_days' => (int) env('ACTIVITY_LOG_TTL_DAYS', 365),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | HTTP request logging middleware (opt-in)
+    |--------------------------------------------------------------------------
+    |
+    | Register JOOservices\LaravelLogging\Http\Middleware\LogHttpRequest in
+    | your application middleware stack. Disabled by default.
+    |
+    */
+    'http' => [
+        'enabled' => (bool) env('ACTIVITY_LOG_HTTP_ENABLED', false),
+        'action' => 'http.request',
+        'level' => 'info',
+        'queue' => (bool) env('ACTIVITY_LOG_HTTP_QUEUE', true),
+        'ignore_paths' => [
+            'up',
+            'health',
+            'horizon*',
+            'telescope*',
+            'login',
+            'logout',
+            'register',
+            'password/*',
+            'reset-password*',
+            'forgot-password*',
+            'sanctum/*',
+            'oauth/*',
+        ],
     ],
 ];

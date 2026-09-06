@@ -49,4 +49,15 @@ ActivityLog::activity()->onExternal('provider', 123);
 ```
 
 Sensitive keys are recursively redacted from `properties`, `context`, and
-`changes` using exact key matching.
+`changes` via store `prepare()` (suffix/exact denylist plus optional value
+patterns). Adapter `toData()` stays raw. `save()` and `dispatch()` (including
+queued jobs) prepare before persist or enqueue so queue payloads are already
+redacted.
+
+Do not reuse an adapter instance after `save()` or `dispatch()`. Those methods
+reset mutable builder state. Prefer a fresh facade/manager resolve per write:
+
+```php
+ActivityLog::activity()->action('one')->save();
+ActivityLog::activity()->action('two')->save();
+```

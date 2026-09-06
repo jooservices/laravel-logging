@@ -4,6 +4,48 @@ All notable changes to `jooservices/laravel-logging` will be documented in this 
 
 ## [Unreleased]
 
+## [v4.0.0] - 2026-09-06
+
+### Added
+- Bulk `recordMany` on store/manager/facade
+- Query helpers `batchId`, `workflowId`, `wherePromoted`, `relatedTo`
+- Optional TTL index config (`ttl.*`) for `activity-log:indexes`
+- Opt-in HTTP middleware `LogHttpRequest`
+- Artisan `make:log-adapter` with publishable stub
+- Doctor checks for domain mappers, TTL, HTTP, retention disabled warning
+- JOO governance docs, Docker/Makefile, workflows, docs tree `00–05`, cookbook
+- Store-level sanitizer/limiter choke point (covers `recordMany`)
+- Default value patterns for Bearer / JWT / PEM redaction
+- `UPGRADE.md` for dto ^3 / repository ^4
+- Internal request/correlation IDs; inbound headers stored as `external_*` only
+- `pruneMatching` deleteMany on filtered query (no static Eloquent)
+- `recordMany` uses `HasCrud::upsert` on `uuid`
+- Domain mapper returns `DomainLogAdapterInterface` without `instanceof self`
+- Adapter `resetAfterPersist()` after `save()` / `dispatch()`
+- `LogStoreInterface::prepare()` for sanitize/limit before persist or queue
+
+### Changed
+- Require `jooservices/dto` `^3.0` and `jooservices/laravel-repository` `^4.0`
+- Sanitize/limit only via store `prepare()`; `queue()->dispatch()` prepares before enqueue so queue payloads are redacted
+- Adapter `toData()` remains raw (for `recordMany` callers that pass DTOs through the store)
+- Export chunk empty check uses `$batch->count() > 0`
+- Mongo integration tests fail (do not skip) when `MONGODB_URI` or `CI` is set
+- CaptainHook: `format:sanity` on pre-commit; pre-push gitleaks hard-fails
+- `lint:all` no longer double-runs phpmd/cs
+- Pint preset `per`; PHPStan level `max` with baseline for legacy findings
+- `ActivityLogRepository` uses repository v4 `HasCrud` + `HasRead` + `HasFilter` + `HasOrder` + `HasIteration`
+- `ActivityLogQuery` applies `Filter`/`orderBy` on a fresh repository (no Builder leak)
+- `ActivityLogData` uses `MapFrom`/`MapTo`/`Required`; persistence is `toArray()` / `from()`
+- Safer `LogsActivity` / audit defaults (dirty-only, skip empty, except + `$hidden`)
+- Aggregations use Mongo `$group`; prune deletes by `uuid` batch; `{type, occurred_at}` index
+- TTL replaces the plain `occurred_at` index when enabled (no duplicate key pattern)
+- Request-scoped request/correlation IDs; untrusted inbound headers ignored
+- Queue job is encrypted, retried with backoff, and idempotent on `uuid`
+- HTTP middleware defaults to queue; ignores auth/reset paths
+- CSV export column renamed to `message`; formula-injection prefix applied
+- `tenantId()` added to `LogAdapterInterface`
+- Log actor/subject identity built via `LogIdentity` (no Eloquent on DTOs)
+
 ## [v1.3.0] - 2026-07-26
 
 ### Changed

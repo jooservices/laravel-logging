@@ -1,27 +1,16 @@
-# JOOservices Laravel Logging Agent Instructions
+# jooservices/laravel-logging
 
-This repository is a PHP 8.5 / Laravel 12/13 package named `jooservices/laravel-logging`.
+This file adds project-only rules. Workspace root `AGENTS.md` remains canonical
+for identity, GitHub account, branch model, commit/PR language, runtime policy,
+and the general quality gate.
 
-
-## Mandatory PHP namespace
-
-**FORCE ALWAYS** use `JOOservices\LaravelLogging\` with the exact casing shown.
-
-## Before coding
-
-- Inspect `git status`, `composer.json`, relevant docs, config, tests, and source files first.
-- Read the relevant `.github/skills/*/SKILL.md` files before non-trivial changes.
-- Use `jooservices/dto` as the standard for tooling, docs, AI guidance, and PHP style; apply only relevant patterns.
-- Use `jooservices/laravel-repository` as the source of truth before changing repository construction or persistence.
-- Do not assume missing behavior. Stop and report evidence when package APIs, MongoDB Laravel behavior, or JOOservices standards conflict.
-
-## Git workflow
-
-- Use exactly two long-lived branches: `master` for production releases and `develop` for integration.
-- Branch all normal feature, chore, docs, and refactor work from `develop`, and target normal pull requests back to `develop`.
-- Do not use `main` as a long-lived branch. If `main` appears, report it instead of deleting it silently.
-- Release tags come from `master`; direct work on `master` is limited to approved hotfixes.
-- Hotfix branches start from `master`, target `master`, and must be merged back to both `master` and `develop`.
+- PHP `^8.5`, Laravel package: `laravel/framework` `^12|^13`, MongoDB via `mongodb/laravel-mongodb` `^5.7`
+- Runtime deps: `jooservices/dto` `^3`, `jooservices/laravel-repository` `^4`
+- Namespace **must** be `JOOservices\LaravelLogging\` (uppercase `OO`)
+- Store structured activity/audit/security/domain/system records only. No dashboards, analytics product, or observability platform replacement
+- Use `jooservices/dto` as the standard for tooling, docs, and AI guidance; use `jooservices/laravel-repository` as the source of truth for repository construction and persistence
+- Read the relevant `.github/skills/*/SKILL.md` before non-trivial changes
+- Do not assume missing behavior. Stop and report evidence when package APIs, MongoDB Laravel behavior, or JOOservices standards conflict
 
 ## Package rules
 
@@ -47,28 +36,21 @@ This repository is a PHP 8.5 / Laravel 12/13 package named `jooservices/laravel-
 - Export is command-based in v1, streams JSONL/CSV, and must not overwrite files unless forced.
 - Model audit logging is opt-in only through `LogsActivity`; never add global automatic observers.
 - Domain event mapping must use the mapper registry and preserve the fallback event-class projection.
+
+## Testing rules
+
 - Do not implement `ActivityLog::fake()`.
 - Do not add fake/assertion helpers such as `assertRecorded()` or `assertNothingRecorded()` unless the testing policy is explicitly changed.
-- Tests in this repository must use full-flow package behavior. Do not mock or fake internal store, repository, model, adapter, or DTO services.
+- Tests must use full-flow package behavior. Do not mock or fake internal store, repository, model, adapter, or DTO services.
 - Allowed fakes are limited to Laravel framework boundaries such as `Queue::fake()`, `Event::fake()`, and temporary filesystem fakes.
 - Persistence assertions must hit the real MongoDB test collection, including a real queued job handle when queue dispatch behavior is covered.
 
-## Quality and docs gate
+## Quality gate
 
-- Pint is the master formatter. Tune PHPCS/php-cs-fixer around Pint, not the reverse.
-- `composer run format:sanity` checks for suspiciously collapsed source, config, docs, workflow, and AI guidance files.
-- `composer run check` is the local normal gate: lint plus the normal test suite.
-- `composer run ci` is the CI/coverage gate: lint plus coverage tests.
-- Before commit, run `composer validate --strict`, `composer run lint:fix`, `composer run lint:all`, `composer run test`, and `composer run check`.
-- Also run `composer run test:coverage`, `composer audit`, and `composer run ci` when configured and environment support is available.
-- Install and verify CaptainHook locally with `composer run post-install-cmd`; do not bypass hooks with `--no-verify`.
-- Fix all warnings, notices, and errors. Do not commit when checks fail.
-- Run `git diff --check` as part of the local gate.
-- If code, config, tooling, workflow, architecture, or user-facing behavior changes, update relevant docs before commit.
-- If contributor workflow, package rules, commands, or architecture guidance changes, update `AGENTS.md` and `.github/skills` before commit.
-- After successful work, commit local changes with the configured author and leave the working tree clean.
-
-Commit author:
-
-- name: Viet Vu
-- email: jooservices@gmail.com
+- Pint uses the `per` preset (PER-CS 3.0) as the master formatter. Tune PHPCS/php-cs-fixer around Pint, not the reverse.
+- PHPStan runs at level `max` with Larastan and strict-rules (`phpstan.neon.dist` + baseline for legacy findings).
+- `composer format:sanity` checks for suspiciously collapsed source, config, docs, workflow, and AI guidance files.
+- `composer check` is the local normal gate (lint plus unit and integration suites); `composer ci` is the coverage gate.
+- CI required checks and the 90% coverage floor are documented in [`WORKFLOWS.md`](WORKFLOWS.md).
+- CaptainHook is required (`composer run post-install-cmd`); never `--no-verify`.
+- When code, config, tooling, workflow, or architecture changes, update `docs/`, `AGENTS.md`, and `.github/skills` in the same change.

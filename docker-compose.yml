@@ -1,0 +1,28 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jooservices/laravel-logging:php85
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: jooservices_logging
+    user: "${DOCKER_UID:-0}:${DOCKER_GID:-0}"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    tty: true
+
+  mongo:
+    image: mongo:8
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

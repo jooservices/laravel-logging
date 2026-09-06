@@ -161,8 +161,8 @@ final class QueryAndCommandTest extends TestCase
             ->occurredAt(CarbonImmutable::parse('2026-01-01 00:00:00'))
             ->save();
 
-        $jsonl = sys_get_temp_dir().'/activity-log-export-test.jsonl';
-        $csv = sys_get_temp_dir().'/activity-log-export-test.csv';
+        $jsonl = sys_get_temp_dir() . '/activity-log-export-test.jsonl';
+        $csv = sys_get_temp_dir() . '/activity-log-export-test.csv';
 
         @unlink($jsonl);
         @unlink($csv);
@@ -184,7 +184,7 @@ final class QueryAndCommandTest extends TestCase
         ])->assertSuccessful();
 
         $this->assertFileExists($csv);
-        $this->assertStringStartsWith('uuid,type,action,description,level', (string) file($csv)[0]);
+        $this->assertStringStartsWith('uuid,type,action,message,level', (string) file($csv)[0]);
 
         @unlink($jsonl);
         @unlink($csv);
@@ -194,7 +194,7 @@ final class QueryAndCommandTest extends TestCase
     {
         ActivityLog::audit()->action('export.force')->save();
 
-        $path = sys_get_temp_dir().'/activity-log-export-force.jsonl';
+        $path = sys_get_temp_dir() . '/activity-log-export-force.jsonl';
         file_put_contents($path, 'existing');
 
         $this->artisan('activity-log:export', ['--output' => $path])
@@ -212,7 +212,7 @@ final class QueryAndCommandTest extends TestCase
         $this->artisan('activity-log:export', ['--format' => 'xml'])
             ->assertExitCode(2);
 
-        $this->artisan('activity-log:export', ['--output' => sys_get_temp_dir().'/missing-directory/activity.jsonl'])
+        $this->artisan('activity-log:export', ['--output' => sys_get_temp_dir() . '/missing-directory/activity.jsonl'])
             ->assertExitCode(2);
     }
 

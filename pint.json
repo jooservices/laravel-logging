@@ -1,5 +1,5 @@
 {
-    "preset": "laravel",
+    "preset": "per",
     "rules": {
         "declare_strict_types": true,
         "strict_param": true,
@@ -19,7 +19,11 @@
             "elements": ["arrays", "arguments", "parameters", "match"]
         },
         "nullable_type_declaration": true,
-        "nullable_type_declaration_for_default_null_value": true
+        "nullable_type_declaration_for_default_null_value": true,
+        "single_line_empty_body": false,
+        "types_spaces": {
+            "space": "single"
+        }
     },
     "exclude": [
         "vendor",

@@ -1,0 +1,76 @@
+name: Bug report
+description: Report a reproducible bug
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not use this form for security vulnerabilities.
+  - type: input
+    id: affected-version
+    attributes:
+      label: Affected version
+      placeholder: e.g. v1.2.3 or dev-develop
+    validations:
+      required: true
+  - type: input
+    id: php-laravel-version
+    attributes:
+      label: PHP and Laravel version
+      placeholder: e.g. PHP 8.5.1, Laravel 12.x/13.x
+    validations:
+      required: true
+  - type: input
+    id: mongodb-version
+    attributes:
+      label: MongoDB and mongodb/laravel-mongodb version
+      placeholder: e.g. MongoDB 7.0, mongodb/laravel-mongodb 5.7
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Configure ...
+        2. Dispatch ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: minimal-code-sample
+    attributes:
+      label: Minimal code sample
+      render: php
+    validations:
+      required: true
+  - type: textarea
+    id: error-output
+    attributes:
+      label: Error output / stack trace
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues before opening this report.
+          required: true
+        - label: I included a minimal reproducible example.
+          required: true
+        - label: This is not a public security vulnerability report.
+          required: true

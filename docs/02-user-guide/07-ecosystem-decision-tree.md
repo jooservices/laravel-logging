@@ -64,8 +64,15 @@ validation outcomes with before/after field diff.
 All three may share correlation IDs (`correlation_id`, `batch_id`) so operators
 can jump from a UI timeline entry to ops logs or compliance events.
 
+**Composer wiring:** this package depends on `jooservices/dto` and
+`jooservices/laravel-repository` only. It does **not** depend on
+`jooservices/laravel-events`. When an application needs both logging and
+events, dispatch each from the app and share IDs — do not route logs through
+`EventService`.
+
 ## Related docs
 
 - [Adapter cookbook](08-adapter-cookbook.md)
+- [Cookbook examples](../03-examples/01-cookbook.md)
 - [laravel-activities](https://github.com/jooservices/laravel-activities)
 - [laravel-events](https://github.com/jooservices/laravel-events)

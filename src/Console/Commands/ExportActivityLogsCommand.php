@@ -6,11 +6,16 @@ namespace JOOservices\LaravelLogging\Console\Commands;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
+use JOOservices\LaravelRepository\Contracts\FilterInterface;
+use JOOservices\LaravelRepository\Support\Filter;
 use Throwable;
 
+/**
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
 final class ExportActivityLogsCommand extends Command
 {
     protected $signature = 'activity-log:export
@@ -46,7 +51,7 @@ final class ExportActivityLogsCommand extends Command
             return self::FAILURE;
         }
 
-        $count = $this->writeExport($this->filteredQuery($repository), $format, $handle);
+        $count = $this->writeExport($repository, $format, $handle);
 
         if ($output !== null) {
             fclose($handle);
@@ -132,53 +137,59 @@ final class ExportActivityLogsCommand extends Command
     }
 
     /**
-     * @return Builder<ActivityLogRecord>
+     * @return list<FilterInterface>
      */
-    private function filteredQuery(ActivityLogRepository $repository): Builder
+    private function filters(): array
     {
-        /** @var Builder<ActivityLogRecord> $query */
-        $query = $repository->newQuery();
+        $filters = [];
 
         if ($this->filledOption('type')) {
-            $query->where('type', (string) $this->option('type'));
+            $filters[] = new Filter('type', (string) $this->option('type'));
         }
 
         if ($this->filledOption('action')) {
-            $query->where('action', (string) $this->option('action'));
+            $filters[] = new Filter('action', (string) $this->option('action'));
         }
 
         if ($this->filledOption('from')) {
-            $query->where('occurred_at', '>=', CarbonImmutable::parse((string) $this->option('from')));
+            $filters[] = new Filter('occurred_at', CarbonImmutable::parse((string) $this->option('from')), 'gte');
         }
 
         if ($this->filledOption('to')) {
-            $query->where('occurred_at', '<', CarbonImmutable::parse((string) $this->option('to')));
+            $filters[] = new Filter('occurred_at', CarbonImmutable::parse((string) $this->option('to')), 'before');
         }
 
-        return $query->oldest('occurred_at');
+        return $filters;
     }
 
     /**
-     * @param  Builder<ActivityLogRecord>  $query
      * @param  resource  $handle
      */
-    private function writeExport(Builder $query, string $format, mixed $handle): int
+    private function writeExport(ActivityLogRepository $repository, string $format, mixed $handle): int
     {
         if ($format === 'csv') {
-            fputcsv($handle, ['uuid', 'type', 'action', 'description', 'level', 'actor_type', 'actor_id', 'subject_type', 'subject_id', 'causer_type', 'causer_id', 'request_id', 'correlation_id', 'trace_id', 'occurred_at', 'created_at']);
+            fputcsv($handle, ['uuid', 'type', 'action', 'message', 'level', 'actor_type', 'actor_id', 'subject_type', 'subject_id', 'causer_type', 'causer_id', 'request_id', 'correlation_id', 'trace_id', 'occurred_at', 'created_at']);
         }
 
         $count = 0;
 
-        $query->chunk($this->chunkSize(), function ($records) use ($format, $handle, &$count): void {
-            foreach ($records as $record) {
-                $format === 'jsonl'
-                    ? $this->writeJsonLine($handle, $record)
-                    : $this->writeCsvRow($handle, $record);
+        $repository->exportChunk(
+            $this->filters(),
+            $this->chunkSize(),
+            function (Collection $records) use ($format, $handle, &$count): void {
+                foreach ($records as $record) {
+                    if (! $record instanceof ActivityLogRecord) {
+                        continue;
+                    }
 
-                $count++;
-            }
-        });
+                    $format === 'jsonl'
+                        ? $this->writeJsonLine($handle, $record)
+                        : $this->writeCsvRow($handle, $record);
+
+                    $count++;
+                }
+            },
+        );
 
         return $count;
     }
@@ -188,7 +199,7 @@ final class ExportActivityLogsCommand extends Command
      */
     private function writeJsonLine(mixed $handle, ActivityLogRecord $record): void
     {
-        fwrite($handle, json_encode($record->toArray(), JSON_THROW_ON_ERROR).PHP_EOL);
+        fwrite($handle, json_encode($record->toArray(), JSON_THROW_ON_ERROR) . PHP_EOL);
     }
 
     /**
@@ -197,23 +208,42 @@ final class ExportActivityLogsCommand extends Command
     private function writeCsvRow(mixed $handle, ActivityLogRecord $record): void
     {
         fputcsv($handle, [
-            $record->uuid,
-            $record->type,
-            $record->action,
-            $record->message,
-            $record->level,
-            $record->actor_type,
-            $record->actor_id,
-            $record->subject_type,
-            $record->subject_id,
-            $record->causer_type,
-            $record->causer_id,
-            $record->request_id,
-            $record->correlation_id,
-            $record->trace_id,
-            (string) $record->occurred_at,
-            (string) $record->created_at,
+            $this->csvSafe($record->uuid),
+            $this->csvSafe($record->type),
+            $this->csvSafe($record->action),
+            $this->csvSafe($record->message),
+            $this->csvSafe($record->level),
+            $this->csvSafe($record->actor_type),
+            $this->csvSafe($record->actor_id),
+            $this->csvSafe($record->subject_type),
+            $this->csvSafe($record->subject_id),
+            $this->csvSafe($record->causer_type),
+            $this->csvSafe($record->causer_id),
+            $this->csvSafe($record->request_id),
+            $this->csvSafe($record->correlation_id),
+            $this->csvSafe($record->trace_id),
+            $this->csvSafe((string) $record->occurred_at),
+            $this->csvSafe((string) $record->created_at),
         ]);
+    }
+
+    private function csvSafe(mixed $value): string
+    {
+        $text = '';
+
+        if ($value === null) {
+            $text = '';
+        }
+
+        if (is_scalar($value)) {
+            $text = (string) $value;
+        }
+
+        if ($text !== '' && in_array($text[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            return "'" . $text;
+        }
+
+        return $text;
     }
 
     private function chunkSize(): int

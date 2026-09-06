@@ -23,6 +23,7 @@ use JOOservices\LaravelLogging\DTO\LogSubjectData;
 use JOOservices\LaravelLogging\Exceptions\InvalidLogDataException;
 use JOOservices\LaravelLogging\Jobs\StoreActivityLogJob;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
+use JOOservices\LaravelLogging\Support\LogIdentity;
 use JsonSerializable;
 use Throwable;
 
@@ -69,7 +70,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
     /** @var array<string, mixed> */
     protected array $changes = [];
 
-    protected DateTimeInterface|string|null $occurredAt = null;
+    protected DateTimeInterface | string | null $occurredAt = null;
 
     protected ?string $queueName = null;
 
@@ -80,23 +81,24 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         protected readonly LogSanitizerInterface $sanitizer,
         protected readonly ActivityLogPayloadLimiterInterface $payloadLimiter,
         protected readonly LogContextResolverInterface $contextResolver,
-    ) {}
+    ) {
+    }
 
-    public function type(string|BackedEnum $type): static
+    public function type(string | BackedEnum $type): static
     {
         $this->type = $this->enumValue($type);
 
         return $this;
     }
 
-    public function level(string|BackedEnum $level): static
+    public function level(string | BackedEnum $level): static
     {
         $this->level = $this->enumValue($level);
 
         return $this;
     }
 
-    public function action(string|BackedEnum $action): static
+    public function action(string | BackedEnum $action): static
     {
         $this->action = $this->enumValue($action);
 
@@ -110,16 +112,16 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this;
     }
 
-    public function by(Model|Authenticatable|string|null $actor): static
+    public function by(Model | Authenticatable | string | null $actor): static
     {
-        $this->actor = LogActorData::fromTarget($actor);
+        $this->actor = LogIdentity::actorData($actor);
 
         return $this;
     }
 
-    public function byExternal(string $type, string|int|null $id = null): static
+    public function byExternal(string $type, string | int | null $id = null): static
     {
-        $this->actor = LogActorData::external($type, $id);
+        $this->actor = LogIdentity::externalActor($type, $id);
 
         return $this;
     }
@@ -134,56 +136,56 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this->by('guest');
     }
 
-    public function on(Model|string|null $subject): static
+    public function on(Model | string | null $subject): static
     {
-        $this->subject = LogSubjectData::fromTarget($subject);
+        $this->subject = LogIdentity::subjectData($subject);
 
         return $this;
     }
 
-    public function onExternal(string $type, string|int|null $id = null): static
+    public function onExternal(string $type, string | int | null $id = null): static
     {
-        $this->subject = LogSubjectData::external($type, $id);
+        $this->subject = LogIdentity::externalSubject($type, $id);
 
         return $this;
     }
 
-    public function causedBy(Model|Authenticatable|string|null $causer): static
+    public function causedBy(Model | Authenticatable | string | null $causer): static
     {
-        $this->causer = LogActorData::fromTarget($causer);
+        $this->causer = LogIdentity::actorData($causer);
 
         return $this;
     }
 
-    public function causedByExternal(string $type, string|int|null $id = null): static
+    public function causedByExternal(string $type, string | int | null $id = null): static
     {
-        $this->causer = LogActorData::external($type, $id);
+        $this->causer = LogIdentity::externalActor($type, $id);
 
         return $this;
     }
 
-    public function source(string|BackedEnum|null $source): static
+    public function source(string | BackedEnum | null $source): static
     {
         $this->source = $source === null ? null : $this->enumValue($source);
 
         return $this;
     }
 
-    public function sourceType(string|BackedEnum|null $sourceType): static
+    public function sourceType(string | BackedEnum | null $sourceType): static
     {
         $this->sourceType = $sourceType === null ? null : $this->enumValue($sourceType);
 
         return $this;
     }
 
-    public function properties(array|Arrayable|JsonSerializable $properties): static
+    public function properties(array | Arrayable | JsonSerializable $properties): static
     {
         $this->properties = array_replace_recursive($this->properties, $this->payloadToArray($properties));
 
         return $this;
     }
 
-    public function context(array|Arrayable|JsonSerializable $context): static
+    public function context(array | Arrayable | JsonSerializable $context): static
     {
         $this->context = array_replace_recursive($this->context, $this->payloadToArray($context));
 
@@ -225,28 +227,28 @@ abstract class BaseLogAdapter implements LogAdapterInterface
         return $this;
     }
 
-    public function tenantId(string|int|null $tenantId): static
+    public function tenantId(string | int | null $tenantId): static
     {
         $this->tenantId = $tenantId === null ? null : (string) $tenantId;
 
         return $this;
     }
 
-    public function batchId(string|int $batchId): static
+    public function batchId(string | int $batchId): static
     {
         $this->context['batch_id'] = (string) $batchId;
 
         return $this;
     }
 
-    public function workflowId(string|int $workflowId): static
+    public function workflowId(string | int $workflowId): static
     {
         $this->context['workflow_id'] = (string) $workflowId;
 
         return $this;
     }
 
-    public function occurredAt(DateTimeInterface|string|null $occurredAt): static
+    public function occurredAt(DateTimeInterface | string | null $occurredAt): static
     {
         $this->occurredAt = $occurredAt;
 
@@ -275,9 +277,9 @@ abstract class BaseLogAdapter implements LogAdapterInterface
             throw new InvalidLogDataException('Activity log action is required before saving.');
         }
 
-        $properties = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->properties));
-        $context = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->context));
-        $changes = $this->payloadLimiter->limit($this->sanitizer->sanitize($this->changes));
+        $properties = $this->properties;
+        $context = $this->context;
+        $changes = $this->changes;
 
         return new ActivityLogData(
             uuid: (string) Str::uuid(),
@@ -309,9 +311,13 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
     public function dispatch(): void
     {
-        $data = $this->toData();
+        // Prepare before queue so Redis/SQS/failed-job payloads are already redacted.
+        $data = $this->store->prepare($this->toData());
+        $sync = $this->syncDispatch;
+        $queue = $this->queueName;
+        $this->resetAfterPersist();
 
-        if ($this->syncDispatch) {
+        if ($sync) {
             $this->store->record($data);
 
             return;
@@ -319,17 +325,20 @@ abstract class BaseLogAdapter implements LogAdapterInterface
 
         $dispatch = StoreActivityLogJob::dispatch($data);
 
-        if ($this->queueName !== null) {
-            $dispatch->onQueue($this->queueName);
+        if ($queue !== null) {
+            $dispatch->onQueue($queue);
         }
     }
 
     public function save(): ActivityLogRecord
     {
-        return $this->store->record($this->toData());
+        $record = $this->store->record($this->toData());
+        $this->resetAfterPersist();
+
+        return $record;
     }
 
-    protected function enumValue(string|BackedEnum $value): string
+    protected function enumValue(string | BackedEnum $value): string
     {
         return $value instanceof BackedEnum ? (string) $value->value : $value;
     }
@@ -338,7 +347,7 @@ abstract class BaseLogAdapter implements LogAdapterInterface
      * @param  array<string, mixed>|Arrayable<string, mixed>|JsonSerializable  $payload
      * @return array<string, mixed>
      */
-    protected function payloadToArray(array|Arrayable|JsonSerializable $payload): array
+    protected function payloadToArray(array | Arrayable | JsonSerializable $payload): array
     {
         if ($payload instanceof Arrayable) {
             /** @var array<string, mixed> */
@@ -363,18 +372,56 @@ abstract class BaseLogAdapter implements LogAdapterInterface
     }
 
     /**
+     * Clear mutable builder state after persist so accidental reuse cannot leak bags.
+     * Prefer a fresh adapter from the manager/facade for each log write.
+     */
+    protected function resetAfterPersist(): void
+    {
+        $this->level = null;
+        $this->action = null;
+        $this->message = null;
+        $this->actor = null;
+        $this->subject = null;
+        $this->causer = null;
+        $this->source = null;
+        $this->sourceType = null;
+        $this->requestId = null;
+        $this->correlationId = null;
+        $this->traceId = null;
+        $this->ipAddress = null;
+        $this->userAgent = null;
+        $this->tenantId = null;
+        $this->properties = [];
+        $this->context = [];
+        $this->changes = [];
+        $this->occurredAt = null;
+        $this->queueName = null;
+        $this->syncDispatch = false;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function exceptionContext(Throwable $exception): array
     {
-        return [
+        $message = $exception->getMessage();
+        if (mb_strlen($message) > 500) {
+            $message = mb_substr($message, 0, 500) . '[truncated]';
+        }
+
+        $context = [
             'exception' => [
                 'class' => $exception::class,
-                'message' => $exception->getMessage(),
+                'message' => $message,
                 'code' => $exception->getCode(),
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
             ],
         ];
+
+        if ((bool) config('app.debug', false)) {
+            $context['exception']['file'] = $exception->getFile();
+            $context['exception']['line'] = $exception->getLine();
+        }
+
+        return $context;
     }
 }

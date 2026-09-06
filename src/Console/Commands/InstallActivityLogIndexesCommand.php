@@ -42,7 +42,7 @@ final class InstallActivityLogIndexesCommand extends Command
      */
     public static function expectedIndexes(): array
     {
-        return array_merge([
+        $indexes = [
             ['keys' => ['uuid' => 1], 'options' => ['unique' => true]],
             ['keys' => ['type' => 1], 'options' => []],
             ['keys' => ['adapter' => 1], 'options' => []],
@@ -56,11 +56,30 @@ final class InstallActivityLogIndexesCommand extends Command
             ['keys' => ['request_id' => 1], 'options' => []],
             ['keys' => ['correlation_id' => 1], 'options' => []],
             ['keys' => ['trace_id' => 1], 'options' => []],
-            ['keys' => ['occurred_at' => 1], 'options' => []],
             ['keys' => ['created_at' => 1], 'options' => []],
+            // Equality on type + range on occurred_at (prune filter).
+            ['keys' => ['type' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['type' => 1, 'action' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['subject_type' => 1, 'subject_id' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['actor_type' => 1, 'actor_id' => 1, 'occurred_at' => -1], 'options' => []],
-        ], PromotedFieldPromoter::indexDefinitions());
+        ];
+
+        // One occurred_at index only: plain ascending OR TTL (Mongo rejects duplicate key patterns).
+        if ((bool) config('laravel-logging.ttl.enabled', false)) {
+            $days = max(1, (int) config('laravel-logging.ttl.expire_after_days', 365));
+            $indexes[] = [
+                'keys' => ['occurred_at' => 1],
+                'options' => [
+                    'name' => 'ttl_occurred_at',
+                    'expireAfterSeconds' => $days * 86400,
+                ],
+            ];
+
+            return array_merge($indexes, PromotedFieldPromoter::indexDefinitions());
+        }
+
+        $indexes[] = ['keys' => ['occurred_at' => 1], 'options' => []];
+
+        return array_merge($indexes, PromotedFieldPromoter::indexDefinitions());
     }
 }

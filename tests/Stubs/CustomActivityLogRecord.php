@@ -6,4 +6,6 @@ namespace JOOservices\LaravelLogging\Tests\Stubs;
 
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 
-final class CustomActivityLogRecord extends ActivityLogRecord {}
+final class CustomActivityLogRecord extends ActivityLogRecord
+{
+}

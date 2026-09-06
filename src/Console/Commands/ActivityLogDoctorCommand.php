@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use JOOservices\LaravelLogging\ActivityLogManager;
 use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
+use JOOservices\LaravelLogging\Contracts\DomainLogMapperInterface;
+use JOOservices\LaravelLogging\Contracts\DomainLogMapperRegistryInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
 use JOOservices\LaravelLogging\Contracts\LogAdapterRegistryInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
@@ -39,9 +41,12 @@ final class ActivityLogDoctorCommand extends Command
             $this->checkStore(),
             $this->checkManager(),
             ...$this->checkAdapters(),
+            ...$this->checkDomainMappers(),
             $this->checkSanitizerConfig(),
             $this->checkPayloadLimitConfig(),
             $this->checkRetentionConfig(),
+            $this->checkTtlConfig(),
+            $this->checkHttpConfig(),
             $this->checkIndexesStatus(),
         ];
 
@@ -90,7 +95,7 @@ final class ActivityLogDoctorCommand extends Command
 
             return $this->passedResult('mongodb.connection', "MongoDB collection [{$connectionName}.{$collectionName}] is reachable.");
         } catch (Throwable $exception) {
-            return $this->failedResult('mongodb.connection', 'MongoDB reachability check failed: '.$exception->getMessage());
+            return $this->failedResult('mongodb.connection', 'MongoDB reachability check failed: ' . $exception->getMessage());
         }
     }
 
@@ -106,7 +111,7 @@ final class ActivityLogDoctorCommand extends Command
                 return $this->failedResult('model', 'ActivityLogRecord binding did not resolve an ActivityLogRecord instance.');
             }
 
-            return $this->passedResult('model', 'Resolved '.get_class($model).'.');
+            return $this->passedResult('model', 'Resolved ' . get_class($model) . '.');
         } catch (Throwable $exception) {
             return $this->failedResult('model', $exception->getMessage());
         }
@@ -124,7 +129,7 @@ final class ActivityLogDoctorCommand extends Command
                 return $this->failedResult('repository', 'ActivityLogRepository binding did not resolve the internal repository.');
             }
 
-            return $this->passedResult('repository', 'Resolved '.get_class($repository).' with model '.get_class($repository->getModel()).'.');
+            return $this->passedResult('repository', 'Resolved ' . get_class($repository) . ' with model ' . get_class($repository->getModel()) . '.');
         } catch (Throwable $exception) {
             return $this->failedResult('repository', $exception->getMessage());
         }
@@ -142,7 +147,7 @@ final class ActivityLogDoctorCommand extends Command
                 return $this->failedResult('store', 'LogStoreInterface binding resolved an invalid store instance.');
             }
 
-            return $this->passedResult('store', 'Resolved '.get_class($store).'.');
+            return $this->passedResult('store', 'Resolved ' . get_class($store) . '.');
         } catch (Throwable $exception) {
             return $this->failedResult('store', $exception->getMessage());
         }
@@ -160,7 +165,7 @@ final class ActivityLogDoctorCommand extends Command
                 return $this->failedResult('manager', 'ActivityLogManager binding resolved an invalid manager instance.');
             }
 
-            return $this->passedResult('manager', 'Resolved '.get_class($manager).'.');
+            return $this->passedResult('manager', 'Resolved ' . get_class($manager) . '.');
         } catch (Throwable $exception) {
             return $this->failedResult('manager', $exception->getMessage());
         }
@@ -192,7 +197,7 @@ final class ActivityLogDoctorCommand extends Command
                         continue;
                     }
 
-                    $checks[] = $this->passedResult("adapter:{$name}", 'Resolved '.get_class($adapter).'.');
+                    $checks[] = $this->passedResult("adapter:{$name}", 'Resolved ' . get_class($adapter) . '.');
                 } catch (Throwable $exception) {
                     $checks[] = $this->failedResult("adapter:{$name}", $exception->getMessage());
                 }
@@ -265,9 +270,33 @@ final class ActivityLogDoctorCommand extends Command
      */
     private function checkRetentionConfig(): array
     {
-        $types = config('laravel-logging.retention.types', config('laravel-logging.retention.defaults', []));
-        $chunk = config('laravel-logging.retention.chunk_size');
+        if (! (bool) config('laravel-logging.retention.enabled', true)) {
+            return $this->warningResult('retention', 'Retention pruning is disabled in config.');
+        }
 
+        $typesResult = $this->validateRetentionTypes(config('laravel-logging.retention.types', config('laravel-logging.retention.defaults', [])));
+        if ($typesResult !== null) {
+            return $typesResult;
+        }
+
+        $chunk = config('laravel-logging.retention.chunk_size');
+        if (! is_int($chunk) || $chunk < 1) {
+            return $this->failedResult('retention', 'Retention chunk size must be a positive integer.');
+        }
+
+        $rulesResult = $this->validateRetentionRules(config('laravel-logging.retention.rules', []));
+        if ($rulesResult !== null) {
+            return $rulesResult;
+        }
+
+        return $this->passedResult('retention', 'Retention config is valid.');
+    }
+
+    /**
+     * @return array{name: string, status: string, message: string}|null
+     */
+    private function validateRetentionTypes(mixed $types): ?array
+    {
         if (! is_array($types)) {
             return $this->failedResult('retention', 'Retention types must be an array.');
         }
@@ -278,11 +307,129 @@ final class ActivityLogDoctorCommand extends Command
             }
         }
 
-        if (! is_int($chunk) || $chunk < 1) {
-            return $this->failedResult('retention', 'Retention chunk size must be a positive integer.');
+        return null;
+    }
+
+    /**
+     * @return array{name: string, status: string, message: string}|null
+     */
+    private function validateRetentionRules(mixed $rules): ?array
+    {
+        if (! is_array($rules)) {
+            return $this->failedResult('retention', 'Retention rules must be an array.');
         }
 
-        return $this->passedResult('retention', 'Retention config is valid.');
+        foreach ($rules as $index => $rule) {
+            if (! is_array($rule)) {
+                return $this->failedResult('retention', "Retention rule [{$index}] must be an array.");
+            }
+
+            $days = $rule['retention_days'] ?? null;
+            if (! is_int($days) || $days < 1) {
+                return $this->failedResult('retention', "Retention rule [{$index}] requires positive integer retention_days.");
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array{name: string, status: string, message: string}>
+     */
+    private function checkDomainMappers(): array
+    {
+        $configured = config('laravel-logging.domain_mappers', []);
+
+        if (! is_array($configured)) {
+            return [$this->failedResult('domain_mappers', 'domain_mappers config must be an array.')];
+        }
+
+        if ($configured === []) {
+            return [$this->passedResult('domain_mappers', 'No domain mappers configured.')];
+        }
+
+        $checks = [];
+
+        foreach ($configured as $index => $mapper) {
+            if (is_string($mapper)) {
+                if (! class_exists($mapper)) {
+                    $checks[] = $this->failedResult("domain_mapper:{$index}", "Mapper class [{$mapper}] does not exist.");
+
+                    continue;
+                }
+
+                if (! is_a($mapper, DomainLogMapperInterface::class, true)) {
+                    $checks[] = $this->failedResult("domain_mapper:{$index}", "Mapper [{$mapper}] must implement DomainLogMapperInterface.");
+
+                    continue;
+                }
+
+                $checks[] = $this->passedResult("domain_mapper:{$index}", "Mapper [{$mapper}] is valid.");
+
+                continue;
+            }
+
+            if (is_callable($mapper)) {
+                $checks[] = $this->passedResult("domain_mapper:{$index}", 'Callable domain mapper is registered.');
+
+                continue;
+            }
+
+            $checks[] = $this->failedResult("domain_mapper:{$index}", 'Domain mapper must be a class-string or callable.');
+        }
+
+        try {
+            $this->laravel->make(DomainLogMapperRegistryInterface::class);
+            $checks[] = $this->passedResult('domain_mapper_registry', 'Domain mapper registry resolves.');
+        } catch (Throwable $exception) {
+            $checks[] = $this->failedResult('domain_mapper_registry', $exception->getMessage());
+        }
+
+        return $checks;
+    }
+
+    /**
+     * @return array{name: string, status: string, message: string}
+     */
+    private function checkTtlConfig(): array
+    {
+        $enabled = (bool) config('laravel-logging.ttl.enabled', false);
+        $days = config('laravel-logging.ttl.expire_after_days', 365);
+
+        if (! $enabled) {
+            return $this->passedResult('ttl', 'TTL index is disabled (command-based prune remains available).');
+        }
+
+        if (! is_int($days) || $days < 1) {
+            return $this->failedResult('ttl', 'ttl.expire_after_days must be a positive integer when TTL is enabled.');
+        }
+
+        return $this->warningResult('ttl', "TTL index enabled for occurred_at after {$days} days (coarse collection lifetime).");
+    }
+
+    /**
+     * @return array{name: string, status: string, message: string}
+     */
+    private function checkHttpConfig(): array
+    {
+        $enabled = (bool) config('laravel-logging.http.enabled', false);
+        $ignore = config('laravel-logging.http.ignore_paths', []);
+
+        if (! is_array($ignore)) {
+            return $this->failedResult('http', 'http.ignore_paths must be an array of path patterns.');
+        }
+
+        foreach ($ignore as $pattern) {
+            if (! is_string($pattern) || $pattern === '') {
+                return $this->failedResult('http', 'http.ignore_paths must contain only non-empty strings.');
+            }
+        }
+
+        if (! $enabled) {
+            return $this->passedResult('http', 'HTTP request middleware logging is disabled.');
+        }
+
+        return $this->passedResult('http', 'HTTP request middleware logging is enabled (register LogHttpRequest in the app stack).');
     }
 
     /**
@@ -311,7 +458,7 @@ final class ActivityLogDoctorCommand extends Command
             }
 
             $indexes = iterator_to_array($connection->getCollection($collectionName)->listIndexes());
-            $existing = array_map(static fn (mixed $index): array => $index->getKey(), $indexes);
+            $existing = array_map(static fn(mixed $index): array => $index->getKey(), $indexes);
             $missing = [];
 
             foreach (InstallActivityLogIndexesCommand::expectedIndexes() as $index) {
@@ -321,12 +468,12 @@ final class ActivityLogDoctorCommand extends Command
             }
 
             if ($missing !== []) {
-                return $this->warningResult('indexes', 'Missing expected indexes: '.implode(', ', $missing).'. Run php artisan activity-log:indexes.');
+                return $this->warningResult('indexes', 'Missing expected indexes: ' . implode(', ', $missing) . '. Run php artisan activity-log:indexes.');
             }
 
             return $this->passedResult('indexes', 'All expected activity log indexes are present.');
         } catch (Throwable $exception) {
-            return $this->warningResult('indexes', 'Index status check could not inspect the collection: '.$exception->getMessage());
+            return $this->warningResult('indexes', 'Index status check could not inspect the collection: ' . $exception->getMessage());
         }
     }
 
@@ -347,7 +494,7 @@ final class ActivityLogDoctorCommand extends Command
         $this->table(
             ['Check', 'Status', 'Message'],
             array_map(
-                fn (array $check): array => [$check['name'], strtoupper($check['status']), $check['message']],
+                fn(array $check): array => [$check['name'], strtoupper($check['status']), $check['message']],
                 $checks,
             ),
         );

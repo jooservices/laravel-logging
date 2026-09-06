@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace JOOservices\LaravelLogging\DTO;
 
 use DateTimeInterface;
+use JOOservices\Dto\Attributes\MapFrom;
+use JOOservices\Dto\Attributes\MapTo;
+use JOOservices\Dto\Attributes\Validation\Required;
 use JOOservices\Dto\Core\Dto;
 
 final class ActivityLogData extends Dto
@@ -19,58 +22,55 @@ final class ActivityLogData extends Dto
         public readonly string $type,
         public readonly string $adapter,
         public readonly ?string $level,
+        #[Required]
         public readonly string $action,
         public readonly ?string $message,
+        #[MapFrom('actor_type')]
+        #[MapTo('actor_type')]
         public readonly ?string $actorType,
+        #[MapFrom('actor_id')]
+        #[MapTo('actor_id')]
         public readonly ?string $actorId,
+        #[MapFrom('subject_type')]
+        #[MapTo('subject_type')]
         public readonly ?string $subjectType,
+        #[MapFrom('subject_id')]
+        #[MapTo('subject_id')]
         public readonly ?string $subjectId,
+        #[MapFrom('causer_type')]
+        #[MapTo('causer_type')]
         public readonly ?string $causerType,
+        #[MapFrom('causer_id')]
+        #[MapTo('causer_id')]
         public readonly ?string $causerId,
         public readonly ?string $source,
+        #[MapFrom('source_type')]
+        #[MapTo('source_type')]
         public readonly ?string $sourceType,
+        #[MapFrom('request_id')]
+        #[MapTo('request_id')]
         public readonly ?string $requestId,
+        #[MapFrom('correlation_id')]
+        #[MapTo('correlation_id')]
         public readonly ?string $correlationId,
+        #[MapFrom('trace_id')]
+        #[MapTo('trace_id')]
         public readonly ?string $traceId,
+        #[MapFrom('ip_address')]
+        #[MapTo('ip_address')]
         public readonly ?string $ipAddress,
+        #[MapFrom('user_agent')]
+        #[MapTo('user_agent')]
         public readonly ?string $userAgent,
+        #[MapFrom('tenant_id')]
+        #[MapTo('tenant_id')]
         public readonly ?string $tenantId,
         public readonly array $properties,
         public readonly array $context,
         public readonly array $changes,
-        public readonly DateTimeInterface|string|null $occurredAt,
-    ) {}
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toPersistenceArray(): array
-    {
-        return [
-            'uuid' => $this->uuid,
-            'type' => $this->type,
-            'adapter' => $this->adapter,
-            'level' => $this->level,
-            'action' => $this->action,
-            'message' => $this->message,
-            'actor_type' => $this->actorType,
-            'actor_id' => $this->actorId,
-            'subject_type' => $this->subjectType,
-            'subject_id' => $this->subjectId,
-            'causer_type' => $this->causerType,
-            'causer_id' => $this->causerId,
-            'source' => $this->source,
-            'source_type' => $this->sourceType,
-            'request_id' => $this->requestId,
-            'correlation_id' => $this->correlationId,
-            'trace_id' => $this->traceId,
-            'ip_address' => $this->ipAddress,
-            'user_agent' => $this->userAgent,
-            'tenant_id' => $this->tenantId,
-            'properties' => $this->properties,
-            'context' => $this->context,
-            'changes' => $this->changes,
-            'occurred_at' => $this->occurredAt,
-        ];
+        #[MapFrom('occurred_at')]
+        #[MapTo('occurred_at')]
+        public readonly DateTimeInterface | string | null $occurredAt,
+    ) {
     }
 }

@@ -18,8 +18,7 @@ final class DomainLogMapperRegistryTest extends TestCase
         $event = new class {};
 
         $registry = new DomainLogMapperRegistry($this->app);
-        $registry->register(fn (): DomainLogMapperInterface => new class implements DomainLogMapperInterface
-        {
+        $registry->register(fn(): DomainLogMapperInterface => new class implements DomainLogMapperInterface {
             public function supports(object $event): bool
             {
                 return true;
@@ -41,8 +40,7 @@ final class DomainLogMapperRegistryTest extends TestCase
     {
         $registry = new DomainLogMapperRegistry($this->app);
         $registry->register(ReplacementMapperStub::class);
-        $registry->replace(ReplacementMapperStub::class, fn (): DomainLogMapperInterface => new class implements DomainLogMapperInterface
-        {
+        $registry->replace(ReplacementMapperStub::class, fn(): DomainLogMapperInterface => new class implements DomainLogMapperInterface {
             public function supports(object $event): bool
             {
                 return true;
@@ -54,18 +52,18 @@ final class DomainLogMapperRegistryTest extends TestCase
             }
         });
 
-        $mapper = $registry->resolveFor(new stdClass);
+        $mapper = $registry->resolveFor(new stdClass());
 
         $this->assertNotNull($mapper);
-        $this->assertTrue($mapper->supports(new stdClass));
+        $this->assertTrue($mapper->supports(new stdClass()));
     }
 
     public function test_invalid_mapper_binding_throws(): void
     {
         $registry = new DomainLogMapperRegistry($this->app);
-        $registry->register(fn (): stdClass => new stdClass);
+        $registry->register(fn(): stdClass => new stdClass());
 
         $this->expectException(InvalidLogAdapterException::class);
-        $registry->resolveFor(new stdClass);
+        $registry->resolveFor(new stdClass());
     }
 }

@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use JOOservices\LaravelLogging\Adapters\BaseLogAdapter;
+use JOOservices\LaravelLogging\Contracts\LogAdapterInterface;
+
+final class {{ class }} extends BaseLogAdapter implements LogAdapterInterface
+{
+    protected string $adapter = '{{ adapter }}';
+
+    protected string $type = '{{ type }}';
+}

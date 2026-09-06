@@ -9,64 +9,70 @@ use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
-use JOOservices\LaravelLogging\Support\ActivityLogAggregator;
 use JOOservices\LaravelLogging\Support\LogIdentity;
+use JOOservices\LaravelRepository\Contracts\FilterInterface;
+use JOOservices\LaravelRepository\Support\Filter;
 
+/**
+ * Public fluent query API. Owns filter/order state and applies them to a fresh
+ * ActivityLogRepository on each terminal — never leaks Eloquent Builder.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
 final class ActivityLogQuery
 {
-    /** @var Builder<Model> */
-    private Builder $builder;
+    /** @var list<FilterInterface> */
+    private array $filters = [];
 
-    public function __construct(ActivityLogRepository $repository)
+    /** @var array<string, string> */
+    private array $orders = [];
+
+    private ?int $limit = null;
+
+    public function __construct(private readonly ActivityLogRepository $repository)
     {
-        $this->builder = $repository->newQuery();
     }
 
-    public function __clone(): void
+    public function type(string | BackedEnum $type): self
     {
-        $this->builder = clone $this->builder;
+        return $this->push(new Filter('type', $this->enumValue($type)));
     }
 
-    public function type(string|BackedEnum $type): self
+    public function adapter(string | BackedEnum $adapter): self
     {
-        return $this->whereEnum('type', $type);
+        return $this->push(new Filter('adapter', $this->enumValue($adapter)));
     }
 
-    public function adapter(string|BackedEnum $adapter): self
+    public function level(string | BackedEnum $level): self
     {
-        return $this->whereEnum('adapter', $adapter);
+        return $this->push(new Filter('level', $this->enumValue($level)));
     }
 
-    public function level(string|BackedEnum $level): self
+    public function action(string | BackedEnum $action): self
     {
-        return $this->whereEnum('level', $level);
+        return $this->push(new Filter('action', $this->enumValue($action)));
     }
 
-    public function action(string|BackedEnum $action): self
-    {
-        return $this->whereEnum('action', $action);
-    }
-
-    public function forSubject(Model|string $subject, string|int|null $id = null): self
+    public function forSubject(Model | string $subject, string | int | null $id = null): self
     {
         $identity = LogIdentity::subject($subject, $id);
 
         return $this->identity('subject', $identity['type'], $identity['id']);
     }
 
-    public function byActor(Model|Authenticatable|string $actor, string|int|null $id = null): self
+    public function byActor(Model | Authenticatable | string $actor, string | int | null $id = null): self
     {
         $identity = LogIdentity::actor($actor, $id);
 
         return $this->identity('actor', $identity['type'], $identity['id']);
     }
 
-    public function causedBy(Model|Authenticatable|string $causer, string|int|null $id = null): self
+    public function causedBy(Model | Authenticatable | string $causer, string | int | null $id = null): self
     {
         $identity = LogIdentity::actor($causer, $id);
 
@@ -75,66 +81,113 @@ final class ActivityLogQuery
 
     public function correlationId(string $correlationId): self
     {
-        return $this->where('correlation_id', $correlationId);
+        return $this->push(new Filter('correlation_id', $correlationId));
     }
 
     public function requestId(string $requestId): self
     {
-        return $this->where('request_id', $requestId);
+        return $this->push(new Filter('request_id', $requestId));
     }
 
     public function traceId(string $traceId): self
     {
-        return $this->where('trace_id', $traceId);
+        return $this->push(new Filter('trace_id', $traceId));
     }
 
-    public function tenantId(string|int $tenantId): self
+    public function tenantId(string | int $tenantId): self
     {
-        return $this->where('tenant_id', (string) $tenantId);
+        return $this->push(new Filter('tenant_id', (string) $tenantId));
     }
 
     public function actionPrefix(string $prefix): self
     {
-        $this->builder->where('action', 'like', $prefix.'%');
-
-        return $this;
+        return $this->push(new Filter('action', $prefix, 'beginsWith'));
     }
 
-    public function between(DateTimeInterface|string $from, DateTimeInterface|string $to): self
+    public function batchId(string | int $batchId): self
     {
-        $this->builder->where('occurred_at', '>=', $this->date($from));
-        $this->builder->where('occurred_at', '<=', $this->date($to));
-
-        return $this;
+        return $this->push(new Filter('batch_id', (string) $batchId));
     }
 
-    public function since(DateTimeInterface|string $from): self
+    public function workflowId(string | int $workflowId): self
     {
-        return $this->where('occurred_at', '>=', $this->date($from));
+        return $this->push(new Filter('workflow_id', (string) $workflowId));
     }
 
-    public function until(DateTimeInterface|string $to): self
+    /**
+     * Filter by a promoted top-level field configured in laravel-logging.promoted_fields.
+     */
+    public function wherePromoted(string $field, mixed $value): self
     {
-        return $this->where('occurred_at', '<=', $this->date($to));
+        /** @var array<string, string> $mappings */
+        $mappings = (array) config('laravel-logging.promoted_fields', []);
+
+        if (! array_key_exists($field, $mappings)) {
+            throw new InvalidArgumentException(
+                "Promoted field [{$field}] is not configured in laravel-logging.promoted_fields.",
+            );
+        }
+
+        return $this->push(new Filter($field, $value));
+    }
+
+    /**
+     * Jump to records sharing correlation_id or batch_id with $record.
+     */
+    public function relatedTo(ActivityLogRecord $record): self
+    {
+        $correlationId = $record->correlation_id;
+        $batchId = $record->getAttribute('batch_id');
+        if (! is_string($batchId) || $batchId === '') {
+            $nested = data_get($record->context, 'batch_id');
+            $batchId = is_string($nested) ? $nested : null;
+        }
+
+        if (is_string($correlationId) && $correlationId !== '') {
+            return $this->correlationId($correlationId);
+        }
+
+        if (is_string($batchId) && $batchId !== '') {
+            return $this->batchId($batchId);
+        }
+
+        return $this->push(new Filter('_id', $record->getKey()));
+    }
+
+    public function between(DateTimeInterface | string $from, DateTimeInterface | string $to): self
+    {
+        return $this
+            ->push(new Filter('occurred_at', $this->date($from), 'gte'))
+            ->push(new Filter('occurred_at', $this->date($to), 'lte'));
+    }
+
+    public function since(DateTimeInterface | string $from): self
+    {
+        return $this->push(new Filter('occurred_at', $this->date($from), 'gte'));
+    }
+
+    public function until(DateTimeInterface | string $to): self
+    {
+        return $this->push(new Filter('occurred_at', $this->date($to), 'lte'));
     }
 
     public function latest(): self
     {
-        $this->builder->latest('occurred_at');
+        $this->orders = ['occurred_at' => 'desc', '_id' => 'desc'];
 
         return $this;
     }
 
     public function oldest(): self
     {
-        $this->builder->oldest('occurred_at');
+        $this->orders = ['occurred_at' => 'asc', '_id' => 'asc'];
 
         return $this;
     }
 
     public function limit(int $limit): self
     {
-        $this->builder->getQuery()->limit($limit);
+        $this->limit = $limit;
 
         return $this;
     }
@@ -145,12 +198,12 @@ final class ActivityLogQuery
     public function get(): Collection
     {
         /** @var Collection<int, ActivityLogRecord> */
-        return $this->builder->get();
+        return $this->apply()->get();
     }
 
     public function first(): ?ActivityLogRecord
     {
-        $record = $this->builder->first();
+        $record = $this->apply()->first();
 
         return $record instanceof ActivityLogRecord ? $record : null;
     }
@@ -162,22 +215,10 @@ final class ActivityLogQuery
 
     public function previousRecord(): ?ActivityLogRecord
     {
-        $latest = $this->latestRecord();
+        $records = (clone $this)->latest()->limit(2)->get();
+        $previous = $records->get(1);
 
-        if ($latest === null) {
-            return null;
-        }
-
-        $occurredAt = $latest->occurred_at;
-
-        if ($occurredAt === null) {
-            return null;
-        }
-
-        return (clone $this)
-            ->where('occurred_at', '<', $occurredAt)
-            ->latest()
-            ->first();
+        return $previous instanceof ActivityLogRecord ? $previous : null;
     }
 
     /**
@@ -185,7 +226,7 @@ final class ActivityLogQuery
      */
     public function countByAction(): array
     {
-        return (new ActivityLogAggregator($this->builder))->countByAction();
+        return $this->repository->countGroupedBy('action', $this->filters);
     }
 
     /**
@@ -193,7 +234,7 @@ final class ActivityLogQuery
      */
     public function countByLevel(): array
     {
-        return (new ActivityLogAggregator($this->builder))->countByLevel();
+        return $this->repository->countGroupedBy('level', $this->filters);
     }
 
     /**
@@ -201,7 +242,7 @@ final class ActivityLogQuery
      */
     public function paginate(int $perPage = 15): LengthAwarePaginator
     {
-        return $this->builder->paginate($perPage);
+        return $this->apply()->paginate($perPage);
     }
 
     /**
@@ -209,40 +250,52 @@ final class ActivityLogQuery
      */
     public function each(callable $callback): void
     {
-        foreach ($this->builder->cursor() as $record) {
+        foreach ($this->apply()->cursor() as $record) {
             if ($record instanceof ActivityLogRecord) {
                 $callback($record);
             }
         }
     }
 
-    private function whereEnum(string $field, string|BackedEnum $value): self
+    private function push(FilterInterface $filter): self
     {
-        return $this->where($field, $value instanceof BackedEnum ? (string) $value->value : $value);
-    }
-
-    private function where(string $field, mixed $operator, mixed $value = null): self
-    {
-        if (func_num_args() === 2) {
-            $this->builder->where($field, $operator);
-
-            return $this;
-        }
-
-        $this->builder->where($field, $operator, $value);
+        $this->filters[] = $filter;
 
         return $this;
+    }
+
+    private function apply(): ActivityLogRepository
+    {
+        $repo = $this->repository->fresh();
+
+        if ($this->filters !== []) {
+            $repo->filter($this->filters);
+        }
+
+        if ($this->orders !== []) {
+            $repo->orderBy($this->orders);
+        }
+
+        if ($this->limit !== null) {
+            $repo->limit($this->limit);
+        }
+
+        return $repo;
     }
 
     private function identity(string $prefix, ?string $type, ?string $id): self
     {
-        $this->builder->where("{$prefix}_type", $type);
-        $this->builder->where("{$prefix}_id", $id);
-
-        return $this;
+        return $this
+            ->push(new Filter("{$prefix}_type", $type))
+            ->push(new Filter("{$prefix}_id", $id));
     }
 
-    private function date(DateTimeInterface|string $date): DateTimeInterface
+    private function enumValue(string | BackedEnum $value): string
+    {
+        return $value instanceof BackedEnum ? (string) $value->value : $value;
+    }
+
+    private function date(DateTimeInterface | string $date): DateTimeInterface
     {
         return is_string($date) ? CarbonImmutable::parse($date) : $date;
     }

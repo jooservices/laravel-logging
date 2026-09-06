@@ -21,8 +21,12 @@ Available filters:
 - `correlationId()`, `requestId()`, `traceId()`
 - `tenantId()` — filter by top-level `tenant_id` (SaaS multi-tenant apps)
 - `actionPrefix()` — `action` starts with the given prefix (e.g. `crawl.`, `http.`)
+- `batchId()`, `workflowId()` — promoted top-level fields from `context.batch_id` /
+  `context.workflow_id` (see `laravel-logging.promoted_fields`)
+- `wherePromoted($field, $value)` — allowlisted against configured promoted fields only
+- `relatedTo($record)` — jump to the same `correlation_id` or `batch_id` as `$record`
 - `between()`, `since()`, `until()`
-- `latest()`, `oldest()`, `limit()`
+- `latest()`, `oldest()`, `limit()`, `each()`
 
 Identity filters reuse logging semantics. Models use class name and string key.
 Strings are named identifiers and are not parsed. Explicit IDs are cast to
@@ -46,8 +50,20 @@ $previous = ActivityLog::query()
 ```
 
 `previousRecord()` returns the next-oldest record for the current query
-constraints — useful for gap calculations, rate limits, and diffing against the
-prior run.
+constraints (stable `_id` tie-break when `occurred_at` ties) — useful for gap
+calculations, rate limits, and diffing against the prior run.
+
+```php
+$related = ActivityLog::query()
+    ->relatedTo($latest)
+    ->get();
+
+$batch = ActivityLog::query()
+    ->batchId($batchId)
+    ->workflowId($workflowId)
+    ->wherePromoted('batch_id', $batchId)
+    ->get();
+```
 
 ## Aggregations
 

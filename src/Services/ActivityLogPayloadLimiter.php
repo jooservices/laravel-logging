@@ -9,6 +9,40 @@ use JOOservices\LaravelLogging\Contracts\ActivityLogPayloadLimiterInterface;
 final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterface
 {
     /**
+     * Top-level identity / timing fields must never be string-truncated.
+     *
+     * @var list<string>
+     */
+    private const STRUCTURAL_KEYS = [
+        'uuid',
+        'type',
+        'adapter',
+        'level',
+        'action',
+        'actor_type',
+        'actor_id',
+        'subject_type',
+        'subject_id',
+        'causer_type',
+        'causer_id',
+        'source',
+        'source_type',
+        'request_id',
+        'correlation_id',
+        'trace_id',
+        'ip_address',
+        'tenant_id',
+        'occurred_at',
+    ];
+
+    /**
+     * Prefer keeping these keys when max_array_items truncates associative bags.
+     *
+     * @var list<string>
+     */
+    private const PRIORITY_KEYS = ['batch_id', 'workflow_id', 'tenant_id', 'request_id', 'correlation_id'];
+
+    /**
      * @param  array{
      *     enabled?: bool,
      *     max_string_length?: int,
@@ -18,7 +52,9 @@ final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterf
      *     truncate_marker?: string
      * }  $config
      */
-    public function __construct(private readonly array $config) {}
+    public function __construct(private readonly array $config)
+    {
+    }
 
     public function limit(array $payload): array
     {
@@ -29,7 +65,7 @@ final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterf
         $limited = $this->limitValue($payload, 0);
 
         if (! is_array($limited)) {
-            return [];
+            return ['__truncated_document' => $this->marker()];
         }
 
         return $this->limitDocumentSize($limited);
@@ -49,21 +85,62 @@ final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterf
             return $this->marker();
         }
 
+        $ordered = $this->prioritizeKeys($value);
         $limited = [];
         $count = 0;
 
-        foreach ($value as $key => $item) {
+        foreach ($ordered as $key => $item) {
             if ($count >= $this->maxArrayItems()) {
                 $limited['__truncated_items'] = $this->marker();
 
                 break;
             }
 
-            $limited[$key] = $this->limitValue($item, $depth + 1);
+            $limited[$key] = $this->limitKeyedValue($key, $item, $depth);
             $count++;
         }
 
         return $limited;
+    }
+
+    private function limitKeyedValue(mixed $key, mixed $item, int $depth): mixed
+    {
+        if (
+            $depth === 0
+            && is_string($key)
+            && in_array($key, self::STRUCTURAL_KEYS, true)
+            && is_string($item)
+        ) {
+            return $item;
+        }
+
+        return $this->limitValue($item, $depth + 1);
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $value
+     * @return array<array-key, mixed>
+     */
+    private function prioritizeKeys(array $value): array
+    {
+        if ($value === [] || array_is_list($value)) {
+            return $value;
+        }
+
+        $priority = [];
+        $rest = [];
+
+        foreach ($value as $key => $item) {
+            if (is_string($key) && in_array($key, self::PRIORITY_KEYS, true)) {
+                $priority[$key] = $item;
+
+                continue;
+            }
+
+            $rest[$key] = $item;
+        }
+
+        return $priority + $rest;
     }
 
     private function limitString(string $value): string
@@ -78,7 +155,7 @@ final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterf
             return $value;
         }
 
-        return mb_substr($value, 0, $maxLength).$this->marker();
+        return mb_substr($value, 0, $maxLength) . $this->marker();
     }
 
     /**
@@ -89,18 +166,27 @@ final class ActivityLogPayloadLimiter implements ActivityLogPayloadLimiterInterf
     {
         $encoded = json_encode($payload);
 
-        if ($encoded === false || strlen($encoded) <= $this->maxDocumentBytes()) {
+        // Fail closed: invalid UTF-8 / INF / NAN must not bypass the budget.
+        if ($encoded === false) {
+            return ['__truncated_document' => $this->marker()];
+        }
+
+        if (strlen($encoded) <= $this->maxDocumentBytes()) {
             return $payload;
         }
 
-        foreach (['properties', 'context', 'changes'] as $field) {
+        foreach (['properties', 'context', 'changes', 'message', 'user_agent', 'exception'] as $field) {
             if (array_key_exists($field, $payload)) {
                 $payload[$field] = $this->marker();
             }
 
             $encoded = json_encode($payload);
 
-            if ($encoded !== false && strlen($encoded) <= $this->maxDocumentBytes()) {
+            if ($encoded === false) {
+                return ['__truncated_document' => $this->marker()];
+            }
+
+            if (strlen($encoded) <= $this->maxDocumentBytes()) {
                 return $payload;
             }
         }

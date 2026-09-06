@@ -6,4 +6,6 @@ namespace JOOservices\LaravelLogging\Exceptions;
 
 use RuntimeException;
 
-final class LoggingConfigurationException extends RuntimeException {}
+final class LoggingConfigurationException extends RuntimeException
+{
+}

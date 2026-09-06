@@ -19,6 +19,7 @@ use JOOservices\LaravelLogging\Contracts\LogContextResolverInterface;
 use JOOservices\LaravelLogging\Contracts\LogSanitizerInterface;
 use JOOservices\LaravelLogging\Contracts\LogStoreInterface;
 use JOOservices\LaravelLogging\DomainLogMapperRegistry;
+use JOOservices\LaravelLogging\Exceptions\InvalidLogDataException;
 use JOOservices\LaravelLogging\Jobs\StoreActivityLogJob;
 use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Tests\Stubs\TestModel;
@@ -187,14 +188,12 @@ final class AdapterDataTest extends TestCase
 
     public function test_domain_mapper_registry_uses_matching_mapper(): void
     {
-        $event = new class
-        {
+        $event = new class {
             public string $subject = 'invoice';
         };
         $registry = new DomainLogMapperRegistry($this->app);
 
-        $registry->register(fn (): DomainLogMapperInterface => new class implements DomainLogMapperInterface
-        {
+        $registry->register(fn(): DomainLogMapperInterface => new class implements DomainLogMapperInterface {
             public function supports(object $event): bool
             {
                 return property_exists($event, 'subject');
@@ -264,7 +263,7 @@ final class AdapterDataTest extends TestCase
 
         $this->assertSame(
             ['command.started', 'command.completed', 'job.started', 'job.completed', 'scheduler.started', 'scheduler.completed', 'scheduler.failed', 'exception.captured'],
-            array_map(static fn ($record) => $record->action, $cases),
+            array_map(static fn($record) => $record->action, $cases),
         );
     }
 
@@ -305,7 +304,7 @@ final class AdapterDataTest extends TestCase
 
         $this->assertSame(
             ['login.succeeded', 'logout', 'password.changed', '2fa.enabled', '2fa.disabled', 'api_key.created', 'api_key.deleted', 'permission.changed', 'suspicious.request'],
-            array_map(static fn ($record) => $record->action, $records),
+            array_map(static fn($record) => $record->action, $records),
         );
         $this->assertSame('rate limit', $records[8]->properties['reason']);
     }
@@ -325,10 +324,14 @@ final class AdapterDataTest extends TestCase
             ->withRequest($request)
             ->save();
 
-        $this->assertSame('req-1', $record->request_id);
-        $this->assertSame('corr-1', $record->correlation_id);
+        $this->assertNotSame('req-1', $record->request_id);
+        $this->assertNotSame('corr-1', $record->correlation_id);
+        $this->assertSame($record->request_id, $record->correlation_id);
+        $this->assertSame('req-1', $record->context['request']['external_request_id']);
+        $this->assertSame('corr-1', $record->context['request']['external_correlation_id']);
         $this->assertSame('4bf92f3577b34da6a3ce929d0e0e4736', $record->trace_id);
         $this->assertSame('UnitTest', $record->user_agent);
+        $this->assertSame('http://localhost/demo', $record->context['request']['url']);
         $this->assertArrayNotHasKey('password', $record->context['request']);
     }
 
@@ -338,12 +341,18 @@ final class AdapterDataTest extends TestCase
 
         (new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver))
             ->action('queued.activity')
+            ->properties(['password' => 'secret', 'count' => 2])
+            ->context(['token' => 'abc', 'ok' => true])
             ->queue('logging')
             ->dispatch();
 
         Queue::assertPushed(StoreActivityLogJob::class, function (StoreActivityLogJob $job): bool {
             return $job->queue === 'logging'
-                && $job->data->action === 'queued.activity';
+                && $job->data->action === 'queued.activity'
+                && ($job->data->properties['password'] ?? null) === '[redacted]'
+                && ($job->data->properties['count'] ?? null) === 2
+                && ($job->data->context['token'] ?? null) === '[redacted]'
+                && ($job->data->context['ok'] ?? null) === true;
         });
 
         $this->assertSame(0, ActivityLogRecord::query()->where('action', 'queued.activity')->count());
@@ -404,5 +413,39 @@ final class AdapterDataTest extends TestCase
         $record = ActivityLogRecord::query()->where('action', 'sync.dispatch')->first();
 
         $this->assertNotNull($record);
+    }
+
+    public function test_adapter_resets_mutable_state_after_save(): void
+    {
+        $adapter = new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver);
+
+        $adapter
+            ->action('first.write')
+            ->properties(['password' => 'secret', 'ok' => 1])
+            ->context(['token' => 'abc'])
+            ->save();
+
+        $this->expectException(InvalidLogDataException::class);
+        $this->expectExceptionMessage('Activity log action is required before saving.');
+
+        $adapter->save();
+    }
+
+    public function test_reused_adapter_does_not_leak_previous_bags(): void
+    {
+        $adapter = new ActivityLogAdapter($this->store, $this->sanitizer, $this->payloadLimiter, $this->contextResolver);
+
+        $adapter
+            ->action('first.write')
+            ->properties(['password' => 'secret', 'ok' => 1])
+            ->context(['token' => 'abc'])
+            ->save();
+
+        $second = $adapter
+            ->action('second.write')
+            ->save();
+
+        $this->assertSame([], $second->properties);
+        $this->assertSame([], $second->context);
     }
 }

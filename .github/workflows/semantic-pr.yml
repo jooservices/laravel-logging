@@ -1,14 +1,14 @@
 name: Semantic PR Title
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - edited
       - synchronize
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: semantic-pr-head-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -18,6 +18,9 @@ jobs:
   validate:
     name: Validate PR Title
     runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]' &&
+      !startsWith(github.head_ref, 'dependabot/')
     steps:
       - name: Check PR title
         uses: amannn/action-semantic-pull-request@v6.1.1

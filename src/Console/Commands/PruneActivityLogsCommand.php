@@ -6,9 +6,9 @@ namespace JOOservices\LaravelLogging\Console\Commands;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
-use JOOservices\LaravelLogging\Models\ActivityLogRecord;
 use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
 use JOOservices\LaravelLogging\Support\RetentionRulePlanner;
+use JOOservices\LaravelRepository\Support\Filter;
 use Throwable;
 
 /**
@@ -71,21 +71,14 @@ final class PruneActivityLogsCommand extends Command
             return 2;
         }
 
-        $query = $repository->newQuery()->where('occurred_at', '<', $cutoff);
+        $result = $repository->pruneMatching(
+            ActivityLogRepository::beforeOccurredAt($cutoff, $type),
+            $this->chunkSize(),
+            $this->option('force') === true,
+        );
 
-        if ($type !== null) {
-            $query->where('type', $type);
-        }
-
-        $matched = (clone $query)->toBase()->count();
         $mode = $this->option('force') ? 'force' : 'dry-run';
-        $deleted = 0;
-
-        if ($mode === 'force') {
-            $deleted = $this->deleteMatchingRecords($query);
-        }
-
-        $this->renderResult($mode, $type, $cutoff, $matched, $deleted);
+        $this->renderResult($mode, $type, $cutoff, $result['matched'], $result['deleted']);
 
         return self::SUCCESS;
     }
@@ -131,14 +124,13 @@ final class PruneActivityLogsCommand extends Command
      */
     private function pruneTypeCutoff(ActivityLogRepository $repository, string $type, CarbonImmutable $cutoff, string $mode): array
     {
-        $query = $repository->newQuery()
-            ->where('occurred_at', '<', $cutoff)
-            ->where('type', $type);
+        $result = $repository->pruneMatching(
+            ActivityLogRepository::beforeOccurredAt($cutoff, $type),
+            $this->chunkSize(),
+            $mode === 'force',
+        );
 
-        $matched = (clone $query)->toBase()->count();
-        $deleted = $mode === 'force' ? $this->deleteMatchingRecords($query) : 0;
-
-        return [$matched, $deleted];
+        return [$result['matched'], $result['deleted']];
     }
 
     /**
@@ -152,24 +144,25 @@ final class PruneActivityLogsCommand extends Command
      */
     private function pruneRule(ActivityLogRepository $repository, array $rule, string $mode): array
     {
-        $query = $repository->newQuery()->where('occurred_at', '<', $rule['cutoff']);
+        $filters = [
+            new Filter('occurred_at', $rule['cutoff'], 'before'),
+        ];
 
         if ($rule['adapter'] !== null) {
-            $query->where('adapter', $rule['adapter']);
+            $filters[] = new Filter('adapter', $rule['adapter']);
         }
 
         if ($rule['level'] !== null) {
-            $query->where('level', $rule['level']);
+            $filters[] = new Filter('level', $rule['level']);
         }
 
         if ($rule['action_prefix'] !== null) {
-            $query->where('action', 'like', $rule['action_prefix'].'%');
+            $filters[] = new Filter('action', $rule['action_prefix'], 'beginsWith');
         }
 
-        $matched = (clone $query)->toBase()->count();
-        $deleted = $mode === 'force' ? $this->deleteMatchingRecords($query) : 0;
+        $result = $repository->pruneMatching($filters, $this->chunkSize(), $mode === 'force');
 
-        return [$matched, $deleted];
+        return [$result['matched'], $result['deleted']];
     }
 
     private function renderAggregateResult(string $mode, int $matched, int $deleted, int $passes): int
@@ -185,10 +178,10 @@ final class PruneActivityLogsCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->line('Matched: '.$matched);
-        $this->line('Deleted: '.$deleted);
-        $this->line('Mode: '.$mode);
-        $this->line('Passes: '.$passes);
+        $this->line('Matched: ' . $matched);
+        $this->line('Deleted: ' . $deleted);
+        $this->line('Mode: ' . $mode);
+        $this->line('Passes: ' . $passes);
 
         return self::SUCCESS;
     }
@@ -226,7 +219,7 @@ final class PruneActivityLogsCommand extends Command
     private function validateType(): ?string
     {
         return $this->filledOption('type') && ! in_array((string) $this->option('type'), $this->knownTypes(), true)
-            ? 'Unknown activity log type ['.$this->option('type').'].'
+            ? 'Unknown activity log type [' . $this->option('type') . '].'
             : null;
     }
 
@@ -296,41 +289,6 @@ final class PruneActivityLogsCommand extends Command
             : (int) config('laravel-logging.retention.chunk_size', 500);
     }
 
-    private function deleteMatchingRecords(mixed $query): int
-    {
-        $deleted = 0;
-        $batch = [];
-
-        foreach ($query->cursor() as $record) {
-            if (! $record instanceof ActivityLogRecord) {
-                continue;
-            }
-
-            $batch[] = $record;
-
-            if (count($batch) >= $this->chunkSize()) {
-                $deleted += $this->deleteBatch($batch);
-                $batch = [];
-            }
-        }
-
-        return $deleted + $this->deleteBatch($batch);
-    }
-
-    /**
-     * @param  list<ActivityLogRecord>  $records
-     */
-    private function deleteBatch(array $records): int
-    {
-        $deleted = 0;
-
-        foreach ($records as $record) {
-            $deleted += $record->delete() === true ? 1 : 0;
-        }
-
-        return $deleted;
-    }
-
     private function filledOption(string $option): bool
     {
         $value = $this->option($option);
@@ -365,9 +323,9 @@ final class PruneActivityLogsCommand extends Command
             return;
         }
 
-        $this->line('Matched: '.$matched);
-        $this->line('Deleted: '.$deleted);
-        $this->line('Mode: '.$mode);
-        $this->line('Cutoff: '.($result['cutoff'] ?? 'none'));
+        $this->line('Matched: ' . $matched);
+        $this->line('Deleted: ' . $deleted);
+        $this->line('Mode: ' . $mode);
+        $this->line('Cutoff: ' . ($result['cutoff'] ?? 'none'));
     }
 }

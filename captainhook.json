@@ -6,13 +6,13 @@
             {
                 "action": "\\CaptainHook\\App\\Hook\\Message\\Action\\Regex",
                 "options": {
-                    "regex": "/^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\\(.+\\))?!?:\\s.{1,100}$/",
-                    "error": "Commit message must follow Conventional Commits format: <type>(<scope>): <description>"
+                    "regex": "/^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\\(.+\\))?!?:\\s[A-Z].{0,99}$/",
+                    "error": "Commit message must follow Conventional Commits with an uppercase subject: <type>(<scope>): Subject"
                 }
             }
         ]
     },
-    "pre-commit": {
+        "pre-commit": {
         "enabled": true,
         "actions": [
             {
@@ -22,13 +22,32 @@
                 }
             },
             {
-                "action": "echo 'Running Pint style check...' && composer lint:pint"
+                "action": "bash -lc 'command -v gitleaks >/dev/null || { echo \"Install gitleaks: brew install gitleaks\"; exit 1; }; gitleaks protect --staged --verbose --redact --config=.gitleaks.toml'",
+                "conditions": []
             },
             {
-                "action": "echo 'Running PHPCS structural checks...' && composer lint:phpcs"
+                "action": "composer format:sanity",
+                "conditions": []
             },
             {
-                "action": "echo 'Running PHPStan static analysis...' && composer lint:phpstan"
+                "action": "composer lint:pint",
+                "conditions": []
+            },
+            {
+                "action": "composer lint:phpcs",
+                "conditions": []
+            },
+            {
+                "action": "composer lint:phpstan",
+                "conditions": []
+            },
+            {
+                "action": "composer lint:phpmd",
+                "conditions": []
+            },
+            {
+                "action": "composer lint:cs",
+                "conditions": []
             }
         ]
     },
@@ -36,17 +55,14 @@
         "enabled": true,
         "actions": [
             {
-                "action": "echo 'Running package check gate...' && composer check"
+                "action": "bash -lc 'command -v gitleaks >/dev/null || { echo \"Install gitleaks: brew install gitleaks\"; exit 1; }; gitleaks detect --verbose --redact --config=.gitleaks.toml'",
+                "conditions": []
+            },
+            {
+                "action": "composer test",
+                "conditions": []
             }
         ]
-    },
-    "prepare-commit-msg": {
-        "enabled": false,
-        "actions": []
-    },
-    "post-commit": {
-        "enabled": false,
-        "actions": []
     },
     "post-merge": {
         "enabled": false,
@@ -57,6 +73,14 @@
         "actions": []
     },
     "post-rewrite": {
+        "enabled": false,
+        "actions": []
+    },
+    "post-change": {
+        "enabled": false,
+        "actions": []
+    },
+    "prepare-commit-msg": {
         "enabled": false,
         "actions": []
     }

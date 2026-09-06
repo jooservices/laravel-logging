@@ -16,43 +16,43 @@ use JsonSerializable;
 
 interface LogAdapterInterface
 {
-    public function type(string|BackedEnum $type): static;
+    public function type(string | BackedEnum $type): static;
 
-    public function level(string|BackedEnum $level): static;
+    public function level(string | BackedEnum $level): static;
 
-    public function action(string|BackedEnum $action): static;
+    public function action(string | BackedEnum $action): static;
 
     public function message(?string $message): static;
 
-    public function by(Model|Authenticatable|string|null $actor): static;
+    public function by(Model | Authenticatable | string | null $actor): static;
 
-    public function byExternal(string $type, string|int|null $id = null): static;
+    public function byExternal(string $type, string | int | null $id = null): static;
 
     public function bySystem(): static;
 
     public function byGuest(): static;
 
-    public function on(Model|string|null $subject): static;
+    public function on(Model | string | null $subject): static;
 
-    public function onExternal(string $type, string|int|null $id = null): static;
+    public function onExternal(string $type, string | int | null $id = null): static;
 
-    public function causedBy(Model|Authenticatable|string|null $causer): static;
+    public function causedBy(Model | Authenticatable | string | null $causer): static;
 
-    public function causedByExternal(string $type, string|int|null $id = null): static;
+    public function causedByExternal(string $type, string | int | null $id = null): static;
 
-    public function source(string|BackedEnum|null $source): static;
+    public function source(string | BackedEnum | null $source): static;
 
-    public function sourceType(string|BackedEnum|null $sourceType): static;
+    public function sourceType(string | BackedEnum | null $sourceType): static;
 
     /**
      * @param  array<string, mixed>|Arrayable<string, mixed>|JsonSerializable  $properties
      */
-    public function properties(array|Arrayable|JsonSerializable $properties): static;
+    public function properties(array | Arrayable | JsonSerializable $properties): static;
 
     /**
      * @param  array<string, mixed>|Arrayable<string, mixed>|JsonSerializable  $context
      */
-    public function context(array|Arrayable|JsonSerializable $context): static;
+    public function context(array | Arrayable | JsonSerializable $context): static;
 
     public function withRequest(?Request $request = null): static;
 
@@ -62,11 +62,13 @@ interface LogAdapterInterface
 
     public function traceId(?string $traceId): static;
 
-    public function batchId(string|int $batchId): static;
+    public function batchId(string | int $batchId): static;
 
-    public function workflowId(string|int $workflowId): static;
+    public function workflowId(string | int $workflowId): static;
 
-    public function occurredAt(DateTimeInterface|string|null $occurredAt): static;
+    public function tenantId(string | int | null $tenantId): static;
+
+    public function occurredAt(DateTimeInterface | string | null $occurredAt): static;
 
     public function sync(): static;
 

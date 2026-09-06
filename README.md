@@ -4,6 +4,7 @@
 [![CI](https://github.com/jooservices/laravel-logging/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jooservices/laravel-logging/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jooservices/laravel-logging/badge)](https://securityscorecards.dev/viewer/?uri=github.com/jooservices/laravel-logging)
 [![PHP Version](https://img.shields.io/badge/PHP-8.5%2B-blue.svg)](https://www.php.net/)
+[![Release](https://img.shields.io/badge/version-4.0.0-blue.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Packagist Version](https://img.shields.io/packagist/v/jooservices/laravel-logging)](https://packagist.org/packages/jooservices/laravel-logging)
 
@@ -11,13 +12,16 @@
 
 It is not a replacement for Laravel Log, Monolog, Sentry, OpenTelemetry, Loki, ELK, or a full observability stack. It is a focused package for durable structured application records.
 
+> **v4.0.0** requires `jooservices/dto` ^3 and `jooservices/laravel-repository` ^4.
+> See [UPGRADE.md](UPGRADE.md) and [CHANGELOG.md](CHANGELOG.md).
+
 ## Requirements
 
 - PHP 8.5+
 - Laravel 12/13
 - `mongodb/laravel-mongodb`
-- `jooservices/dto`
-- `jooservices/laravel-repository`
+- `jooservices/dto` ^3
+- `jooservices/laravel-repository` ^4
 - A MongoDB connection configured in Laravel
 
 ## Installation
@@ -175,7 +179,7 @@ $previous = ActivityLog::query()->forSubject($target)->action('job.completed')->
 $counts = ActivityLog::query()->since($from)->actionPrefix('http.')->countByAction();
 ```
 
-See [Querying docs](docs/01-usage/04-querying.md) for `tenantId()`, `actionPrefix()`, and aggregation helpers.
+See [Querying docs](docs/02-user-guide/04-querying.md) for `tenantId()`, `actionPrefix()`, and aggregation helpers.
 
 ## Promoted Fields And Tenant ID
 
@@ -203,8 +207,8 @@ This package is for **ops/technical logs**. Use
 [laravel-activities](https://github.com/jooservices/laravel-activities) for admin
 UI timelines and [laravel-events](https://github.com/jooservices/laravel-events)
 for compliance event streams. See
-[Ecosystem decision tree](docs/01-usage/07-ecosystem-decision-tree.md) and
-[Adapter cookbook](docs/01-usage/08-adapter-cookbook.md).
+[Ecosystem decision tree](docs/02-user-guide/07-ecosystem-decision-tree.md) and
+[Adapter cookbook](docs/02-user-guide/08-adapter-cookbook.md).
 
 ## Retention And Export
 
@@ -359,6 +363,29 @@ framework boundaries such as queue dispatch, events, or temporary filesystem
 output.
 
 Release workflow and tagging expectations are documented in
-[`docs/02-development/05-release-process.md`](docs/02-development/05-release-process.md).
+[`docs/04-development/04-release-process.md`](docs/04-development/04-release-process.md).
 
 AI contributors should follow `AGENTS.md` and the package-specific skills in `.github/skills/`. When code, config, tooling, workflow, architecture, or behavior changes, update the matching docs and AI guidance before committing.
+
+Local Docker tooling (PHP 8.5 + MongoDB) is available through the `Makefile`:
+
+```bash
+make install
+make lint-all
+make test
+make ci
+```
+
+## Community
+
+- [Documentation index](docs/README.md) — architecture, user guide, examples, development, maintenance
+- [Workflow reference](WORKFLOWS.md) — CI chain, required checks, release automation
+- [Contributing guide](CONTRIBUTING.md) — setup, git workflow, commit convention, quality gates
+- [Security policy](SECURITY.md) — how to report vulnerabilities privately
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Support](SUPPORT.md)
+- [Governance](GOVERNANCE.md)
+
+## License
+
+MIT — see [LICENSE](LICENSE).

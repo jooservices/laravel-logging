@@ -6,17 +6,18 @@ namespace JOOservices\LaravelLogging\Concerns;
 
 use JOOservices\LaravelLogging\ActivityLogOptions;
 use JOOservices\LaravelLogging\Facades\ActivityLog;
+use JOOservices\LaravelLogging\Support\AuditableAttributes;
 
 trait LogsActivity
 {
     public static function bootLogsActivity(): void
     {
-        static::created(fn (self $model): mixed => $model->writeActivityLog('created'));
-        static::updated(fn (self $model): mixed => $model->writeActivityLog('updated'));
-        static::deleted(fn (self $model): mixed => $model->writeActivityLog('deleted'));
+        static::created(fn(self $model): mixed => $model->writeActivityLog('created'));
+        static::updated(fn(self $model): mixed => $model->writeActivityLog('updated'));
+        static::deleted(fn(self $model): mixed => $model->writeActivityLog('deleted'));
 
         if (method_exists(static::class, 'restored')) {
-            static::restored(fn (self $model): mixed => $model->writeActivityLog('restored'));
+            static::restored(fn(self $model): mixed => $model->writeActivityLog('restored'));
         }
     }
 
@@ -28,8 +29,13 @@ trait LogsActivity
     protected function writeActivityLog(string $event): mixed
     {
         $options = $this->activityLogOptions();
-        $before = $event === 'created' ? [] : $this->getOriginal();
-        $after = $event === 'deleted' ? [] : $this->getAttributes();
+        $hidden = array_values($this->getHidden());
+        $before = $event === 'created'
+            ? []
+            : AuditableAttributes::filter($this->getOriginal(), $options->only, $options->except, $hidden);
+        $after = $event === 'deleted'
+            ? []
+            : AuditableAttributes::filter($this->getAttributes(), $options->only, $options->except, $hidden);
         $changes = $this->activityLogChanges($before, $after, $options);
 
         if ($changes === [] && ! $options->submitEmptyLogs) {
@@ -37,7 +43,7 @@ trait LogsActivity
         }
 
         return ActivityLog::audit()
-            ->action($options->actionPrefix.'.'.$event)
+            ->action($options->actionPrefix . '.' . $event)
             ->on($this)
             ->only($options->only ?? array_keys($after + $before))
             ->except($options->except)
