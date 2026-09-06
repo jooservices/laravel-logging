@@ -4,12 +4,16 @@
 [![CI](https://github.com/jooservices/laravel-logging/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jooservices/laravel-logging/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jooservices/laravel-logging/badge)](https://securityscorecards.dev/viewer/?uri=github.com/jooservices/laravel-logging)
 [![PHP Version](https://img.shields.io/badge/PHP-8.5%2B-blue.svg)](https://www.php.net/)
+[![Release](https://img.shields.io/badge/version-4.0.0-blue.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Packagist Version](https://img.shields.io/packagist/v/jooservices/laravel-logging)](https://packagist.org/packages/jooservices/laravel-logging)
 
 `jooservices/laravel-logging` stores structured activity, audit, security, domain, and system logs in MongoDB for Laravel applications.
 
 It is not a replacement for Laravel Log, Monolog, Sentry, OpenTelemetry, Loki, ELK, or a full observability stack. It is a focused package for durable structured application records.
+
+> **v4.0.0** requires `jooservices/dto` ^3 and `jooservices/laravel-repository` ^4.
+> See [UPGRADE.md](UPGRADE.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements
 

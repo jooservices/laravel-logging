@@ -4,6 +4,8 @@ All notable changes to `jooservices/laravel-logging` will be documented in this 
 
 ## [Unreleased]
 
+## [v4.0.0] - 2026-09-06
+
 ### Added
 - Bulk `recordMany` on store/manager/facade
 - Query helpers `batchId`, `workflowId`, `wherePromoted`, `relatedTo`
