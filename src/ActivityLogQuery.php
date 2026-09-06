@@ -17,6 +17,9 @@ use JOOservices\LaravelLogging\Repositories\ActivityLogRepository;
 use JOOservices\LaravelLogging\Support\ActivityLogAggregator;
 use JOOservices\LaravelLogging\Support\LogIdentity;
 
+/**
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
 final class ActivityLogQuery
 {
     /** @var Builder<Model> */
@@ -102,12 +105,12 @@ final class ActivityLogQuery
 
     public function batchId(string | int $batchId): self
     {
-        return $this->where('context.batch_id', (string) $batchId);
+        return $this->where('batch_id', (string) $batchId);
     }
 
     public function workflowId(string | int $workflowId): self
     {
-        return $this->where('context.workflow_id', (string) $workflowId);
+        return $this->where('workflow_id', (string) $workflowId);
     }
 
     /**
@@ -119,12 +122,16 @@ final class ActivityLogQuery
     }
 
     /**
-     * Jump to records sharing correlation_id or context.batch_id with $record.
+     * Jump to records sharing correlation_id or batch_id with $record.
      */
     public function relatedTo(ActivityLogRecord $record): self
     {
         $correlationId = $record->correlation_id;
-        $batchId = data_get($record->context, 'batch_id');
+        $batchId = $record->getAttribute('batch_id');
+        if (! is_string($batchId) || $batchId === '') {
+            $nested = data_get($record->context, 'batch_id');
+            $batchId = is_string($nested) ? $nested : null;
+        }
 
         if (is_string($correlationId) && $correlationId !== '') {
             $this->builder->where('correlation_id', $correlationId);

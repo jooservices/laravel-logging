@@ -63,6 +63,10 @@ ActivityLog::recordMany($records);
 
 ## Query helpers
 
+`batchId()` / `workflowId()` query **promoted** top-level fields. By default
+config maps `context.batch_id` → `batch_id` and `context.workflow_id` →
+`workflow_id` on persist (see `promoted_fields`).
+
 ```php
 ActivityLog::query()
     ->batchId($batchId)

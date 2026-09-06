@@ -32,7 +32,11 @@ final class FeatureSurfaceTest extends TestCase
         ]);
 
         $this->assertCount(2, $created);
+        $first = $created->first();
+        $this->assertInstanceOf(ActivityLogRecord::class, $first);
+        $this->assertSame($batch, $first->batch_id);
         $this->assertCount(2, ActivityLog::query()->batchId($batch)->get());
+        $this->assertCount(2, ActivityLog::query()->correlationId('corr-1')->get());
     }
 
     public function test_related_to_uses_correlation_id(): void

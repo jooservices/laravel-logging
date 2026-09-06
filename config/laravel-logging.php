@@ -39,6 +39,8 @@ return [
     |
     */
     'promoted_fields' => [
+        'batch_id' => 'context.batch_id',
+        'workflow_id' => 'context.workflow_id',
         // 'site_id' => 'properties.site_id',
     ],
 

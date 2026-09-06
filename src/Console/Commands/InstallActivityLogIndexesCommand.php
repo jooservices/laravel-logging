@@ -61,8 +61,6 @@ final class InstallActivityLogIndexesCommand extends Command
             ['keys' => ['type' => 1, 'action' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['subject_type' => 1, 'subject_id' => 1, 'occurred_at' => -1], 'options' => []],
             ['keys' => ['actor_type' => 1, 'actor_id' => 1, 'occurred_at' => -1], 'options' => []],
-            ['keys' => ['context.batch_id' => 1], 'options' => []],
-            ['keys' => ['context.workflow_id' => 1], 'options' => []],
         ];
 
         if ((bool) config('laravel-logging.ttl.enabled', false)) {
