@@ -44,7 +44,9 @@ final class DefaultLogContextResolver implements LogContextResolverInterface
             'context' => [
                 'request' => [
                     'method' => $request->method(),
-                    'url' => $request->fullUrl(),
+                    // Prefer url() over fullUrl() so query-string secrets
+                    // (signed URLs, OAuth codes) are not persisted by default.
+                    'url' => $request->url(),
                     'route' => $request->route()?->getName(),
                 ],
             ],

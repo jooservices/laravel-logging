@@ -29,9 +29,6 @@ final class MakeLogAdapterCommand extends GeneratorCommand
         return $rootNamespace . '\Logging\Adapters';
     }
 
-    /**
-     * @return array<int, array{0: string, 1: int, 2?: string|null, 3?: bool}>
-     */
     protected function getArguments(): array
     {
         return [
@@ -39,9 +36,6 @@ final class MakeLogAdapterCommand extends GeneratorCommand
         ];
     }
 
-    /**
-     * @return array<int, array{0: string, 1: int|null, 2: string, 3?: bool}>
-     */
     protected function getOptions(): array
     {
         return [
