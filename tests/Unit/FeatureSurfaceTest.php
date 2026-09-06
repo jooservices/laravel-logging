@@ -87,6 +87,44 @@ final class FeatureSurfaceTest extends TestCase
         $this->assertCount(2, $related);
     }
 
+    public function test_related_to_falls_back_to_record_id(): void
+    {
+        $this->requiresMongoDb();
+        $this->clearActivityLogs();
+
+        $record = ActivityLog::system()->action('solo.only')->save();
+        $record->forceFill([
+            'correlation_id' => null,
+            'batch_id' => null,
+            'context' => [],
+        ])->save();
+
+        $fresh = $record->fresh();
+        $this->assertInstanceOf(ActivityLogRecord::class, $fresh);
+
+        $related = ActivityLog::query()->relatedTo($fresh)->get();
+        $this->assertCount(1, $related);
+        $this->assertTrue($related->first()?->is($fresh));
+    }
+
+    public function test_http_middleware_swallows_logging_failures(): void
+    {
+        config()->set('laravel-logging.http.enabled', true);
+        config()->set('laravel-logging.http.ignore_paths', []);
+        config()->set('laravel-logging.http.queue', false);
+
+        // Force adapter resolution to fail after the response is produced.
+        config()->set('laravel-logging.adapters.system', 'App\\DoesNotExist\\SystemAdapter');
+
+        $middleware = new LogHttpRequest();
+        $response = $middleware->handle(
+            Request::create('/still-ok', 'GET'),
+            fn(): Response => new Response('ok', 200),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+    }
+
     public function test_related_to_uses_correlation_id(): void
     {
         $this->requiresMongoDb();
