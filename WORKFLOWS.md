@@ -15,7 +15,7 @@ and a MongoDB 8 service where integration tests need a real database.
 | CodeQL | `codeql.yml` | Push/PR/schedule | Analyze GitHub Actions |
 | Workflow audit | `workflow-audit.yml` | `.github/**` changes | actionlint + zizmor |
 | PR labeler | `pr-labeler.yml` | PR | Path labels |
-| Scorecard | `scorecard.yml` | Schedule / push `master` | OpenSSF Scorecard |
+| `scorecard.yml` | Push to `develop`; scheduled; manual | OpenSSF Scorecard |
 | Link check | `link-check.yml` | Schedule / manual | Markdown links |
 | Stale | `stale.yml` | Daily | Inactive issues/PRs |
 | Release | `release.yml` | Tag `v*.*.*` | Changelog + GitHub Release + Packagist |
