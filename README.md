@@ -1,12 +1,13 @@
-# Laravel Logging
+# jooservices/laravel-logging
 
-[![codecov](https://codecov.io/gh/jooservices/laravel-logging/branch/master/graph/badge.svg)](https://codecov.io/gh/jooservices/laravel-logging)
-[![CI](https://github.com/jooservices/laravel-logging/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jooservices/laravel-logging/actions/workflows/ci.yml)
+[![Coverage (develop)](https://codecov.io/gh/jooservices/laravel-logging/branch/develop/graph/badge.svg)](https://codecov.io/gh/jooservices/laravel-logging/branch/develop)
+[![CI](https://github.com/jooservices/laravel-logging/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/jooservices/laravel-logging/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jooservices/laravel-logging/badge)](https://securityscorecards.dev/viewer/?uri=github.com/jooservices/laravel-logging)
 [![PHP Version](https://img.shields.io/badge/PHP-8.5%2B-blue.svg)](https://www.php.net/)
-[![Release](https://img.shields.io/badge/version-4.0.0-blue.svg)](CHANGELOG.md)
+[![GitHub Release](https://img.shields.io/github/v/release/jooservices/laravel-logging?display_name=tag)](https://github.com/jooservices/laravel-logging/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Packagist Version](https://img.shields.io/packagist/v/jooservices/laravel-logging)](https://packagist.org/packages/jooservices/laravel-logging)
+[![Total Downloads](https://img.shields.io/packagist/dt/jooservices/laravel-logging)](https://packagist.org/packages/jooservices/laravel-logging)
 
 `jooservices/laravel-logging` stores structured activity, audit, security, domain, and system logs in MongoDB for Laravel applications.
 
