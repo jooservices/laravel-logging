@@ -332,6 +332,7 @@ final class AdapterDataTest extends TestCase
         $this->assertSame('4bf92f3577b34da6a3ce929d0e0e4736', $record->trace_id);
         $this->assertSame('UnitTest', $record->user_agent);
         $this->assertSame('http://localhost/demo', $record->context['request']['url']);
+        $this->assertIsArray($record->context['request']);
         $this->assertArrayNotHasKey('password', $record->context['request']);
     }
 
