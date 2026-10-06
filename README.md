@@ -46,6 +46,13 @@ ACTIVITY_LOG_COLLECTION=activity_logs
 MONGODB_URI=mongodb://localhost:27017
 ```
 
+Check that the package can resolve its runtime configuration before using the
+adapter:
+
+```bash
+php artisan activity-log:doctor
+```
+
 ## Quick start
 
 ```php
