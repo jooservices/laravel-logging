@@ -44,7 +44,7 @@
         "laravel/pint": "^1.18",
         "mockery/mockery": "^1.6",
         "orchestra/testbench": "^10.0|^11.0",
-        "phpmd/phpmd": "^2.15",
+        "phpmd/phpmd": "^2.15 || ^3.0",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
